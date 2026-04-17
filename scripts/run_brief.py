@@ -1,10 +1,14 @@
-import json
 import os
 import time
 import smtplib
-import urllib.request
+import subprocess
+import sys
 from datetime import datetime
 from email.mime.text import MIMEText
+
+# Install anthropic SDK — handles connection keepalive correctly
+subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "anthropic"])
+import anthropic
 
 API_KEY = os.environ["ANTHROPIC_API_KEY"]
 GMAIL_USER = os.environ["GMAIL_USER"]
@@ -12,49 +16,41 @@ GMAIL_PASS = os.environ["GMAIL_APP_PASSWORD"]
 today = datetime.now().strftime("%A %-d %B %Y")
 today_short = datetime.now().strftime("%a %-d %b %Y")
 
+client = anthropic.Anthropic(api_key=API_KEY, timeout=180.0)
+
 
 def call_api(model, system, messages, use_web_search=False, attempt=0):
-    tools = [{"type": "web_search_20260209", "name": "web_search", "max_uses": 3}] if use_web_search else []
-    body = {
+    kwargs = {
         "model": model,
         "max_tokens": 1000,
         "system": system,
-        "messages": messages
+        "messages": messages,
     }
-    if tools:
-        body["tools"] = tools
-
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=json.dumps(body).encode(),
-        headers={
-            "x-api-key": API_KEY,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json"
-        }
-    )
+    if use_web_search:
+        kwargs["tools"] = [{"type": "web_search_20260209", "name": "web_search", "max_uses": 3}]
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            return json.loads(resp.read())
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode("utf-8", errors="replace")
-        print(f"HTTP {e.code}: {error_body}")
-        if e.code == 429 and attempt < 3:
+        return client.messages.create(**kwargs)
+    except anthropic.RateLimitError:
+        if attempt < 3:
             wait = (2 ** attempt) * 20
             print(f"Rate limited. Waiting {wait}s (retry {attempt+1}/3)...")
             time.sleep(wait)
             return call_api(model, system, messages, use_web_search, attempt + 1)
         raise
+    except anthropic.APIStatusError as e:
+        print(f"API error {e.status_code}: {e.message}")
+        raise
 
 
-def extract_text(data):
+def extract_text(response):
     return "\n".join(
-        b["text"] for b in data.get("content", []) if b.get("type") == "text"
+        b.text for b in response.content if b.type == "text"
     ).strip()
 
 
 # ── STEP 1: RESEARCH ──────────────────────────────────────────────────────────
-# Haiku + web search. Returns raw bullet points only.
+# Sonnet + web search (required for web search tool)
+# Capped at 1000 tokens — bullet points only, no prose
 print("Step 1: Researching live market data...")
 
 research_system = (
@@ -69,7 +65,8 @@ research_prompt = (
     "1. LME cobalt cash price today (USD/t) with source and date\n"
     "2. LME copper 3-month price today (USD/t) with source and date\n"
     "3. Any DRC cobalt export quota or supply policy news from the last 48 hours\n"
-    "4. Any Western buyer-supplier deals, MOUs, or offtake agreements in cobalt or copper from last 48 hours\n"
+    "4. Any Western buyer-supplier deals, MOUs, or offtake agreements "
+    "in cobalt or copper from last 48 hours\n"
     "5. Any Lobito Corridor developments from last 48 hours\n"
     "6. Any other significant cobalt or copper supply chain news from last 48 hours\n\n"
     "Format: plain bullet points. Source and date required for every item. "
@@ -81,14 +78,19 @@ data = call_api("claude-sonnet-4-6", research_system, messages, use_web_search=T
 
 # Agentic loop for web search turns
 turn = 0
-while data.get("stop_reason") == "tool_use" and turn < 6:
+while data.stop_reason == "tool_use" and turn < 6:
     turn += 1
     print(f"  Search turn {turn}...")
     time.sleep(5)
-    messages.append({"role": "assistant", "content": data["content"]})
+
+    # Append assistant response
+    assistant_content = [b.model_dump() for b in data.content]
+    messages.append({"role": "assistant", "content": assistant_content})
+
+    # Build tool results
     tool_results = [
-        {"type": "tool_result", "tool_use_id": b["id"], "content": "completed"}
-        for b in data["content"] if b.get("type") == "tool_use"
+        {"type": "tool_result", "tool_use_id": b.id, "content": "completed"}
+        for b in data.content if b.type == "tool_use"
     ]
     messages.append({"role": "user", "content": tool_results})
     data = call_api("claude-sonnet-4-6", research_system, messages, use_web_search=True)
@@ -106,7 +108,7 @@ if len(research) < 50:
 
 
 # ── STEP 2: BRIEF WRITING ─────────────────────────────────────────────────────
-# Sonnet, no web search. Pure writing from the research text.
+# Haiku — no web search, pure formatting task
 print("\nStep 2: Writing brief...")
 time.sleep(10)
 
@@ -134,9 +136,11 @@ brief_prompt = (
     "Cobalt: [exact price and source from research] - [one sentence context]\n"
     "Copper: [exact price and source from research] - [one sentence context]\n\n"
     "SUPPLY CHAIN SIGNALS\n"
-    "[2-3 paragraphs. Named companies, specific volumes, specific dates from research only.]\n\n"
+    "[2-3 paragraphs. Named companies, specific volumes, "
+    "specific dates from research only.]\n\n"
     "GEOPOLITICAL RISK\n"
-    "[1-2 paragraphs. Named actors, specific policies, specific timelines from research only.]\n\n"
+    "[1-2 paragraphs. Named actors, specific policies, "
+    "specific timelines from research only.]\n\n"
     "DEMAND DRIVERS\n"
     "[1 paragraph. Named companies and programmes from research only.]\n\n"
     "BROKER'S LENS\n"
@@ -145,7 +149,8 @@ brief_prompt = (
     "Never use 'it is worth noting' or 'the situation remains fluid'.]\n\n"
     "-\n"
     "Connecting Western buyers with responsible DRC and Copperbelt supply.\n"
-    "Published weekdays. Forward to a colleague in procurement, supply chain, or commodities."
+    "Published weekdays. Forward to a colleague in procurement, "
+    "supply chain, or commodities."
 )
 
 brief_data = call_api(
