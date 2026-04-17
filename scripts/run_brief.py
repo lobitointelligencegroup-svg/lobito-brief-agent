@@ -32,13 +32,13 @@ def brave_news(query, count=5):
     params = urllib.parse.urlencode({
         "q":         query,
         "count":     count,
-        "freshness": "pd",   # past day — 24 hours only
+        "freshness": "pw",   # past week — pd (past day) too aggressive for mining news
         "safesearch":"off",
     })
     url = f"https://api.search.brave.com/res/v1/news/search?{params}"
     req = urllib.request.Request(url, headers={
         "Accept":               "application/json",
-        "Accept-Encoding":      "gzip",
+        "Accept-Encoding":      "identity",
         "X-Subscription-Token": BRAVE_API_KEY,
     })
     try:
@@ -65,13 +65,13 @@ def brave_web(query, count=3):
     params = urllib.parse.urlencode({
         "q":         query,
         "count":     count,
-        "freshness": "pd",
+        "freshness": "pw",
         "safesearch":"off",
     })
     url = f"https://api.search.brave.com/res/v1/web/search?{params}"
     req = urllib.request.Request(url, headers={
         "Accept":               "application/json",
-        "Accept-Encoding":      "gzip",
+        "Accept-Encoding":      "identity",
         "X-Subscription-Token": BRAVE_API_KEY,
     })
     try:
@@ -146,16 +146,38 @@ def claude_haiku(system, user_message, attempt=0):
 # ── STEP 1: RESEARCH ──────────────────────────────────────────────────────────
 print("Step 1: Searching live data via Brave...")
 
+# DEBUG — print raw response from first query to diagnose empty results
+print("  DEBUG: Testing Brave API with first query...")
+test_params = urllib.parse.urlencode({
+    "q": "cobalt price",
+    "count": 3,
+    "freshness": "pw",
+    "safesearch": "off",
+})
+test_url = f"https://api.search.brave.com/res/v1/web/search?{test_params}"
+test_req = urllib.request.Request(test_url, headers={
+    "Accept": "application/json",
+    "Accept-Encoding": "identity",
+    "X-Subscription-Token": BRAVE_API_KEY,
+})
+try:
+    with urllib.request.urlopen(test_req, timeout=15) as resp:
+        raw = resp.read().decode("utf-8")
+        print(f"  HTTP status: {resp.status}")
+        print(f"  Response (first 1000 chars): {raw[:1000]}")
+except Exception as e:
+    print(f"  DEBUG ERROR: {e}")
+
 # 8 targeted searches — designed to capture everything Perplexity Computer found
 searches = [
-    ("LME cobalt price today USD tonne",                           "news", 5),
-    ("LME copper price today USD tonne",                           "news", 5),
-    ("DRC Congo cobalt export quota supply policy",                "news", 5),
-    ("cobalt copper Western buyer supplier deal offtake MOU",      "news", 5),
-    ("Lobito corridor cobalt copper Angola railway",               "news", 4),
-    ("critical minerals supply chain US EU UK policy",             "news", 4),
-    ("Glencore CMOC Umicore Trafigura Mercuria cobalt copper",     "news", 4),
-    ("cobalt copper LME price fastmarkets mining",                 "web",  3),
+    ("cobalt price",                                               "web",  5),
+    ("copper price LME",                                           "web",  5),
+    ("DRC cobalt export Congo mining",                             "news", 5),
+    ("cobalt copper offtake deal supply agreement",                "news", 5),
+    ("Lobito corridor Angola railway minerals",                    "news", 4),
+    ("critical minerals supply chain policy 2026",                 "news", 4),
+    ("Glencore cobalt copper mining",                              "news", 4),
+    ("CMOC Trafigura Mercuria cobalt copper",                      "news", 3),
 ]
 
 all_research = []
@@ -188,7 +210,10 @@ Write in intelligent editorial prose. Be specific — name companies, volumes, d
 
 brief_prompt = f"""Today is {today}.
 
-Write the Critical Minerals Intelligence Brief from these search results:
+Write the Critical Minerals Intelligence Brief from these search results.
+Results are from the past week — prioritise the most recent items.
+For the Price Snapshot, use the most recent price figures you can find in the results.
+If an item appears older than 3 days, note it as background context rather than today's news.
 
 {research_text}
 
@@ -199,14 +224,14 @@ Critical Minerals Intelligence
 {today} - Daily Brief
 
 PRICE SNAPSHOT
-Cobalt: [price from results, source, date] - [one sentence on drivers]
-Copper: [price from results, source, date] - [one sentence on drivers]
+Cobalt: [most recent price from results, source, date] - [one sentence on drivers]
+Copper: [most recent price from results, source, date] - [one sentence on drivers]
 
 SUPPLY CHAIN SIGNALS
-[2-3 paragraphs. Named companies, specific volumes, specific dates from results only. If a result mentions a deal, MOU, or supply agreement — include it here with full detail.]
+[2-3 paragraphs. Named companies, specific volumes, specific dates from results only. Include any deals, MOUs, offtake agreements, or supply partnerships found.]
 
 GEOPOLITICAL RISK
-[1-2 paragraphs. DRC policy, export controls, sanctions, logistics disruptions from results only. Named actors and specific timelines.]
+[1-2 paragraphs. DRC policy, export controls, quota developments, logistics disruptions from results only. Named actors and specific timelines.]
 
 DEMAND DRIVERS
 [1 paragraph. EV, aerospace, defence, grid — named companies and programmes from results only.]
