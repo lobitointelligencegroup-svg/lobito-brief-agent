@@ -14,7 +14,7 @@ today_short = datetime.now().strftime("%a %-d %b %Y")
 
 
 def call_api(model, system, messages, use_web_search=False, attempt=0):
-    tools = [{"type": "web_search_20260209", "name": "web_search", "max_uses": 5}] if use_web_search else []
+    tools = [{"type": "web_search_20260209", "name": "web_search", "max_uses": 3}] if use_web_search else []
     body = {
         "model": model,
         "max_tokens": 1000,
@@ -77,7 +77,7 @@ research_prompt = (
 )
 
 messages = [{"role": "user", "content": research_prompt}]
-data = call_api("claude-haiku-4-5-20251001", research_system, messages, use_web_search=True)
+data = call_api("claude-sonnet-4-6", research_system, messages, use_web_search=True)
 
 # Agentic loop for web search turns
 turn = 0
@@ -91,7 +91,7 @@ while data.get("stop_reason") == "tool_use" and turn < 6:
         for b in data["content"] if b.get("type") == "tool_use"
     ]
     messages.append({"role": "user", "content": tool_results})
-    data = call_api("claude-haiku-4-5-20251001", research_system, messages, use_web_search=True)
+    data = call_api("claude-sonnet-4-6", research_system, messages, use_web_search=True)
 
 research = extract_text(data)
 print(f"  Research done. {len(research)} characters.")
@@ -149,7 +149,7 @@ brief_prompt = (
 )
 
 brief_data = call_api(
-    "claude-sonnet-4-6",
+    "claude-haiku-4-5-20251001",
     brief_system,
     [{"role": "user", "content": brief_prompt}],
     use_web_search=False
