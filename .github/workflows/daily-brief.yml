@@ -2,10 +2,10 @@ name: Daily Critical Minerals Brief
 
 on:
   schedule:
-    # 5:00 AM UTC = 6:00 AM BST (British Summer Time, UTC+1)
-    # Change to '0 6 * * 1-5' in winter (GMT = UTC)
+    # 5:00 AM UTC = 6:00 AM BST (British Summer Time)
+    # Change to '0 6 * * 1-5' in winter (GMT)
     - cron: '0 5 * * 1-5'
-  workflow_dispatch: # Manual trigger from GitHub Actions tab
+  workflow_dispatch:
 
 jobs:
   generate-brief:
@@ -18,6 +18,7 @@ jobs:
           cat << 'PYTHON_SCRIPT' > run_brief.py
           import json
           import os
+          import time
           import smtplib
           import urllib.request
           from datetime import datetime
@@ -26,134 +27,139 @@ jobs:
           API_KEY = os.environ["ANTHROPIC_API_KEY"]
           GMAIL_USER = os.environ["GMAIL_USER"]
           GMAIL_PASS = os.environ["GMAIL_APP_PASSWORD"]
-
           today = datetime.now().strftime("%A %-d %B %Y")
+          today_short = datetime.now().strftime("%a %-d %b %Y")
 
-          SYSTEM = """You are the research and editorial engine for Lobito Intelligence Group.
-          Write the daily Critical Minerals Intelligence brief.
-          Use web search for every brief — never rely on training data for prices or news.
-          Search LME directly for today's prices.
-          Only include news from the last 48 hours.
-          Name every company. Cite every price with source and date.
-          The Broker's Lens must be specific and actionable — never generic summary."""
-
-          USER = f"""Research and write today's Critical Minerals Intelligence Brief. Today is {today}.
-
-          Search for:
-          1. LME cobalt price today — cash price USD/t, direction vs yesterday
-          2. LME copper price today — 3-month price USD/t, direction
-          3. DRC cobalt supply chain news today — last 48 hours only
-          4. Critical minerals Western buyer supplier deal news today — last 48 hours only
-          5. Lobito corridor cobalt copper news today
-
-          Write in this exact format:
-
-          Lobito Intelligence Group
-          Critical Minerals Intelligence
-          {today} · Daily Brief
-
-          PRICE SNAPSHOT
-          Cobalt: [price] USD/t ([source], [date]) — [direction]. [One-line context.]
-          Copper: [price] USD/t ([source], [date]) — [direction]. [One-line context.]
-
-          SUPPLY CHAIN SIGNALS
-          [2-3 paragraphs, named companies, specific volumes, specific dates]
-
-          GEOPOLITICAL RISK
-          [1-2 paragraphs, named actors, specific policies, specific timelines]
-
-          DEMAND DRIVERS
-          [1 paragraph, named companies, named programmes, specific volumes]
-
-          BROKER'S LENS
-          [3-4 sentences. What should a Western procurement director do differently THIS WEEK based on today's specific developments? Name actions, timeframes, counterparty types. Never use 'it is worth noting' or 'the situation remains fluid'.]
-
-          —
-          Connecting Western buyers with responsible DRC and Copperbelt supply.
-          Published weekdays. Forward to a colleague in procurement, supply chain, or commodities."""
-
-          def call_api(messages, attempt=0):
-              import time
-              body = json.dumps({
-                  "model": "claude-sonnet-4-6",
-                  "max_tokens": 2000,
-                  "tools": [{"type": "web_search_20260209", "name": "web_search", "max_uses": 5}],
-                  "system": SYSTEM,
-                  "messages": messages
-              }).encode()
-
+          def call_api(model, system, messages, use_web_search=False, attempt=0):
+              tools = [{"type": "web_search_20260209", "name": "web_search", "max_uses": 5}] if use_web_search else []
+              body = {"model": model, "max_tokens": 1000, "system": system, "messages": messages}
+              if tools:
+                  body["tools"] = tools
               req = urllib.request.Request(
                   "https://api.anthropic.com/v1/messages",
-                  data=body,
-                  headers={
-                      "x-api-key": API_KEY,
-                      "anthropic-version": "2023-06-01",
-                      "content-type": "application/json"
-                  }
-              )
+                  data=json.dumps(body).encode(),
+                  headers={"x-api-key": API_KEY, "anthropic-version": "2023-06-01",
+                           "content-type": "application/json"})
               try:
                   with urllib.request.urlopen(req, timeout=120) as resp:
                       return json.loads(resp.read())
               except urllib.error.HTTPError as e:
-                  if e.code == 429 and attempt < 4:
-                      wait = (2 ** attempt) * 30  # 30s, 60s, 120s, 240s
-                      print(f"Rate limited (429). Waiting {wait}s before retry {attempt + 1}/4...")
+                  error_body = e.read().decode("utf-8", errors="replace")
+                  print(f"HTTP {e.code}: {error_body}")
+                  if e.code == 429 and attempt < 3:
+                      wait = (2 ** attempt) * 20
+                      print(f"Rate limited. Waiting {wait}s (retry {attempt+1}/3)...")
                       time.sleep(wait)
-                      return call_api(messages, attempt + 1)
+                      return call_api(model, system, messages, use_web_search, attempt+1)
                   raise
 
-          # Turn 1 — initial request
-          messages = [{"role": "user", "content": USER}]
-          data = call_api(messages)
-          print(f"Turn 1 stop_reason: {data.get('stop_reason')}")
+          def extract_text(data):
+              return "\n".join(b["text"] for b in data.get("content", []) if b.get("type") == "text").strip()
 
-          # Agentic loop — keep going while Claude wants to use tools
-          max_turns = 6
+          # ── STEP 1: RESEARCH ─────────────────────────────────────────────────
+          # Haiku + web search. Small output, cheap.
+          # Goal: get raw factual data only — prices, headlines, company names.
+          print("Step 1: Researching live market data...")
+
+          research_system = "You are a commodity market data collector. Search the web and return raw factual findings only. No analysis. No formatting beyond bullet points. Every item must include a source name and publication date."
+
+          research_prompt = f"""Today is {today}. Search for and return raw data on these topics:
+
+1. LME cobalt cash price today (USD/t) with source and date
+2. LME copper 3-month price today (USD/t) with source and date
+3. Any DRC cobalt export quota or supply policy news from the last 48 hours
+4. Any Western buyer-supplier deals, MOUs, or offtake agreements in cobalt or copper from last 48 hours
+5. Any Lobito Corridor developments from last 48 hours
+6. Any other significant cobalt or copper supply chain news from last 48 hours
+
+Format: plain bullet points. Source and date required for every item. Discard anything older than 48 hours."""
+
+          messages = [{"role": "user", "content": research_prompt}]
+          data = call_api("claude-haiku-4-5-20251001", research_system, messages, use_web_search=True)
+
+          # Agentic loop for web search turns
           turn = 0
-          while data.get("stop_reason") == "tool_use" and turn < max_turns:
+          while data.get("stop_reason") == "tool_use" and turn < 6:
               turn += 1
-              print(f"Tool use turn {turn}")
-
-              # Small delay between turns to stay within rate limits
-              import time
-              time.sleep(8)
-
-              # Add Claude's response to messages
+              print(f"  Search turn {turn}...")
+              time.sleep(5)
               messages.append({"role": "assistant", "content": data["content"]})
-
-              # Build tool results for each tool_use block
-              tool_results = []
-              for block in data["content"]:
-                  if block.get("type") == "tool_use":
-                      # Web search results come back in the response itself
-                      # We just need to acknowledge them
-                      tool_results.append({
-                          "type": "tool_result",
-                          "tool_use_id": block["id"],
-                          "content": "Search completed."
-                      })
-
+              tool_results = [{"type": "tool_result", "tool_use_id": b["id"], "content": "completed"}
+                              for b in data["content"] if b.get("type") == "tool_use"]
               messages.append({"role": "user", "content": tool_results})
-              data = call_api(messages)
-              print(f"Turn {turn+1} stop_reason: {data.get('stop_reason')}")
+              data = call_api("claude-haiku-4-5-20251001", research_system, messages, use_web_search=True)
 
-          # Extract final text
-          brief = "\n".join(
-              b["text"] for b in data.get("content", [])
-              if b.get("type") == "text"
-          ).strip()
+          research = extract_text(data)
+          print(f"  Research done. {len(research)} characters.")
+          if research:
+              print(f"  Sample: {research[:300]}")
 
-          if not brief:
-              brief = f"Brief generation failed on {today}. Check GitHub Actions logs."
-              print("WARNING: No text content found in final response")
-              print("Full response:", json.dumps(data, indent=2))
+          if len(research) < 50:
+              research = f"No research data retrieved for {today}. Check web search is enabled at console.anthropic.com"
 
-          print("Brief extracted successfully")
-          print(f"Length: {len(brief)} characters")
+          # ── STEP 2: BRIEF WRITING ─────────────────────────────────────────────
+          # Sonnet, no web search, pure writing task.
+          # Takes the research text and formats it into the brief.
+          print("\nStep 2: Writing brief...")
+          time.sleep(10)
 
-          # Send email
+          brief_system = """You are the editorial writer for Lobito Intelligence Group.
+Write the daily intelligence brief using only the research provided.
+Do not add any information not present in the research.
+Do not invent prices, companies, or events.
+Write in intelligent editorial prose — specific, never generic.
+The Broker's Lens must contain a non-obvious actionable insight derived from today's specific findings."""
+
+          brief_prompt = f"""Write today's Critical Minerals Intelligence Brief from the research below.
+Use only what is in the research. If a section has nothing relevant, write one sentence noting no significant developments.
+
+TODAY: {today}
+
+RESEARCH:
+{research}
+
+FORMAT — use exactly this structure:
+
+Lobito Intelligence Group
+Critical Minerals Intelligence
+{today} · Daily Brief
+
+PRICE SNAPSHOT
+Cobalt: [exact price and source from research] — [one sentence context]
+Copper: [exact price and source from research] — [one sentence context]
+
+SUPPLY CHAIN SIGNALS
+[2-3 paragraphs. Named companies, specific volumes, specific dates from research only.]
+
+GEOPOLITICAL RISK
+[1-2 paragraphs. Named actors, specific policies, specific timelines from research only.]
+
+DEMAND DRIVERS
+[1 paragraph. Named companies and programmes from research only.]
+
+BROKER'S LENS
+[3-4 sentences. What should a Western procurement director do differently THIS WEEK based on today's research? Name specific actions and timeframes. Never use 'it is worth noting' or 'the situation remains fluid'.]
+
+—
+Connecting Western buyers with responsible DRC and Copperbelt supply.
+Published weekdays. Forward to a colleague in procurement, supply chain, or commodities."""
+
+          brief_data = call_api(
+              "claude-sonnet-4-6",
+              brief_system,
+              [{"role": "user", "content": brief_prompt}],
+              use_web_search=False
+          )
+
+          brief = extract_text(brief_data)
+          print(f"  Brief done. {len(brief)} characters.")
+
+          if len(brief) < 100:
+              brief = f"Brief generation failed on {today}.\n\nResearch collected:\n{research}"
+
+          # ── STEP 3: SEND EMAIL ────────────────────────────────────────────────
+          print("\nStep 3: Sending email...")
           msg = MIMEText(brief, "plain", "utf-8")
-          today_short = datetime.now().strftime("%a %-d %b %Y")
           msg["Subject"] = f"\U0001f4cb Brief ready \u2014 {today_short}"
           msg["From"] = GMAIL_USER
           msg["To"] = GMAIL_USER
@@ -162,7 +168,7 @@ jobs:
               server.login(GMAIL_USER, GMAIL_PASS)
               server.send_message(msg)
 
-          print(f"Email sent to {GMAIL_USER}")
+          print(f"Sent to {GMAIL_USER}")
           PYTHON_SCRIPT
 
           python3 run_brief.py
