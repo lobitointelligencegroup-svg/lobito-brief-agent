@@ -1056,7 +1056,7 @@ async function submitGate() {
     // Fall back: unlock anyway (the email gate is for list-building, not hard access control)
     // Also silently open Beehiiv subscribe page in background tab to capture the email
     try {
-      window.open(`https://lobito.beehiiv.com/subscribe?email=${encodeURIComponent(email)}`, '_blank');
+      window.open(`https://lobito-intelligence-group-newsletter.beehiiv.com/subscribe?email=${encodeURIComponent(email)}`, '_blank');
     } catch {}
     localStorage.setItem(BRIEF_UNLOCKED_KEY, '1');
     showFullBrief();
