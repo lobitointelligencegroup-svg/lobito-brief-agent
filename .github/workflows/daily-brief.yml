@@ -2,10 +2,10 @@ name: Daily Critical Minerals Brief
 
 on:
   schedule:
-    # Runs at 6:00 AM UTC Monday-Friday
-    # Adjust offset if you want UK time (UTC+1 BST = 5:00 UTC)
+    # 5:00 AM UTC = 6:00 AM BST (British Summer Time, UTC+1)
+    # Change to '0 6 * * 1-5' in winter (GMT = UTC)
     - cron: '0 5 * * 1-5'
-  workflow_dispatch: # allows manual trigger from GitHub UI
+  workflow_dispatch: # Manual trigger from GitHub Actions tab
 
 jobs:
   generate-brief:
@@ -13,67 +13,147 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Generate brief via Claude API with web search
-        id: claude
+      - name: Generate and send brief
         run: |
-          TODAY=$(date '+%A %-d %B %Y')
-          
-          RESPONSE=$(curl -s -X POST https://api.anthropic.com/v1/messages \
-            -H "x-api-key: ${{ secrets.ANTHROPIC_API_KEY }}" \
-            -H "anthropic-version: 2023-06-01" \
-            -H "content-type: application/json" \
-            -d "{
-              \"model\": \"claude-sonnet-4-6\",
-              \"max_tokens\": 2000,
-              \"tools\": [{
-                \"type\": \"web_search_20260209\",
-                \"name\": \"web_search\",
-                \"max_uses\": 8
-              }],
-              \"system\": \"You are the research and editorial engine for Lobito Intelligence Group. Write the daily Critical Minerals Intelligence brief. Use web search for every brief — never rely on training data for prices or news. Search LME directly for today's prices. Only include news from the last 48 hours. Name every company. Cite every price with source and date. The Broker's Lens must be specific and actionable — never generic.\",
-              \"messages\": [{
-                \"role\": \"user\",
-                \"content\": \"Research and write today's Critical Minerals Intelligence Brief. Today is $TODAY.\n\n1. Search 'LME cobalt price today' — get cash price USD/t and direction vs yesterday\n2. Search 'LME copper price today' — get 3-month price USD/t and direction\n3. Search 'DRC cobalt supply chain news today' — last 48 hours only\n4. Search 'critical minerals Western buyer supplier deal news today' — last 48 hours only\n5. Search 'Lobito corridor cobalt copper news today'\n\nWrite in this exact format:\n\nLobito Intelligence Group\nCritical Minerals Intelligence\n$TODAY · Daily Brief\n\nPRICE SNAPSHOT\nCobalt: [price] USD/t ([source], [date]) — [direction]. [One-line context.]\nCopper: [price] USD/t ([source], [date]) — [direction]. [One-line context.]\n\nSUPPLY CHAIN SIGNALS\n[2-3 paragraphs, named companies, specific volumes, specific dates]\n\nGEOPOLITICAL RISK\n[1-2 paragraphs, named actors, specific policies, specific timelines]\n\nDEMAND DRIVERS\n[1 paragraph, named companies, named programmes, specific volumes]\n\nBROKER'S LENS\n[3-4 sentences. What should a Western procurement director do differently THIS WEEK based on today's specific developments? Name actions, timeframes, counterparty types. Never use 'it is worth noting' or 'the situation remains fluid'.]\n\n—\nConnecting Western buyers with responsible DRC and Copperbelt supply.\nPublished weekdays. Forward to a colleague in procurement, supply chain, or commodities.\"
-              }]
-            }")
-          
-          # Extract text content from response
-          BRIEF=$(echo "$RESPONSE" | python3 -c "
-          import sys, json
-          data = json.load(sys.stdin)
-          texts = [b['text'] for b in data.get('content', []) if b.get('type') == 'text']
-          print('\n'.join(texts))
-          ")
-          
-          # Save brief to file for email step
-          echo "$BRIEF" > brief.txt
-          echo "Brief generated successfully"
-
-      - name: Send brief via Gmail
-        run: |
-          TODAY=$(date '+%a %-d %b %Y')
-          BRIEF=$(cat brief.txt)
-          
-          python3 << 'EOF'
-          import smtplib
+          cat << 'PYTHON_SCRIPT' > run_brief.py
+          import json
           import os
-          from email.mime.text import MIMEText
+          import smtplib
+          import urllib.request
           from datetime import datetime
-          
-          brief = open('brief.txt').read()
-          today = datetime.now().strftime('%a %-d %b %Y')
-          
-          msg = MIMEText(brief, 'plain', 'utf-8')
-          msg['Subject'] = f'📋 Brief ready — {today}'
-          msg['From'] = os.environ['GMAIL_USER']
-          msg['To'] = os.environ['GMAIL_USER']
-          
-          with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-              server.login(os.environ['GMAIL_USER'], os.environ['GMAIL_APP_PASSWORD'])
+          from email.mime.text import MIMEText
+
+          API_KEY = os.environ["ANTHROPIC_API_KEY"]
+          GMAIL_USER = os.environ["GMAIL_USER"]
+          GMAIL_PASS = os.environ["GMAIL_APP_PASSWORD"]
+
+          today = datetime.now().strftime("%A %-d %B %Y")
+
+          SYSTEM = """You are the research and editorial engine for Lobito Intelligence Group.
+          Write the daily Critical Minerals Intelligence brief.
+          Use web search for every brief — never rely on training data for prices or news.
+          Search LME directly for today's prices.
+          Only include news from the last 48 hours.
+          Name every company. Cite every price with source and date.
+          The Broker's Lens must be specific and actionable — never generic summary."""
+
+          USER = f"""Research and write today's Critical Minerals Intelligence Brief. Today is {today}.
+
+          Search for:
+          1. LME cobalt price today — cash price USD/t, direction vs yesterday
+          2. LME copper price today — 3-month price USD/t, direction
+          3. DRC cobalt supply chain news today — last 48 hours only
+          4. Critical minerals Western buyer supplier deal news today — last 48 hours only
+          5. Lobito corridor cobalt copper news today
+
+          Write in this exact format:
+
+          Lobito Intelligence Group
+          Critical Minerals Intelligence
+          {today} · Daily Brief
+
+          PRICE SNAPSHOT
+          Cobalt: [price] USD/t ([source], [date]) — [direction]. [One-line context.]
+          Copper: [price] USD/t ([source], [date]) — [direction]. [One-line context.]
+
+          SUPPLY CHAIN SIGNALS
+          [2-3 paragraphs, named companies, specific volumes, specific dates]
+
+          GEOPOLITICAL RISK
+          [1-2 paragraphs, named actors, specific policies, specific timelines]
+
+          DEMAND DRIVERS
+          [1 paragraph, named companies, named programmes, specific volumes]
+
+          BROKER'S LENS
+          [3-4 sentences. What should a Western procurement director do differently THIS WEEK based on today's specific developments? Name actions, timeframes, counterparty types. Never use 'it is worth noting' or 'the situation remains fluid'.]
+
+          —
+          Connecting Western buyers with responsible DRC and Copperbelt supply.
+          Published weekdays. Forward to a colleague in procurement, supply chain, or commodities."""
+
+          def call_api(messages):
+              body = json.dumps({
+                  "model": "claude-sonnet-4-6",
+                  "max_tokens": 2000,
+                  "tools": [{"type": "web_search_20260209", "name": "web_search", "max_uses": 8}],
+                  "system": SYSTEM,
+                  "messages": messages
+              }).encode()
+
+              req = urllib.request.Request(
+                  "https://api.anthropic.com/v1/messages",
+                  data=body,
+                  headers={
+                      "x-api-key": API_KEY,
+                      "anthropic-version": "2023-06-01",
+                      "content-type": "application/json"
+                  }
+              )
+              with urllib.request.urlopen(req, timeout=120) as resp:
+                  return json.loads(resp.read())
+
+          # Turn 1 — initial request
+          messages = [{"role": "user", "content": USER}]
+          data = call_api(messages)
+          print(f"Turn 1 stop_reason: {data.get('stop_reason')}")
+
+          # Agentic loop — keep going while Claude wants to use tools
+          max_turns = 6
+          turn = 0
+          while data.get("stop_reason") == "tool_use" and turn < max_turns:
+              turn += 1
+              print(f"Tool use turn {turn}")
+
+              # Add Claude's response to messages
+              messages.append({"role": "assistant", "content": data["content"]})
+
+              # Build tool results for each tool_use block
+              tool_results = []
+              for block in data["content"]:
+                  if block.get("type") == "tool_use":
+                      # Web search results come back in the response itself
+                      # We just need to acknowledge them
+                      tool_results.append({
+                          "type": "tool_result",
+                          "tool_use_id": block["id"],
+                          "content": "Search completed."
+                      })
+
+              messages.append({"role": "user", "content": tool_results})
+              data = call_api(messages)
+              print(f"Turn {turn+1} stop_reason: {data.get('stop_reason')}")
+
+          # Extract final text
+          brief = "\n".join(
+              b["text"] for b in data.get("content", [])
+              if b.get("type") == "text"
+          ).strip()
+
+          if not brief:
+              brief = f"Brief generation failed on {today}. Check GitHub Actions logs."
+              print("WARNING: No text content found in final response")
+              print("Full response:", json.dumps(data, indent=2))
+
+          print("Brief extracted successfully")
+          print(f"Length: {len(brief)} characters")
+
+          # Send email
+          msg = MIMEText(brief, "plain", "utf-8")
+          today_short = datetime.now().strftime("%a %-d %b %Y")
+          msg["Subject"] = f"\U0001f4cb Brief ready \u2014 {today_short}"
+          msg["From"] = GMAIL_USER
+          msg["To"] = GMAIL_USER
+
+          with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+              server.login(GMAIL_USER, GMAIL_PASS)
               server.send_message(msg)
-          
-          print(f'Brief sent to {os.environ["GMAIL_USER"]}')
-          EOF
+
+          print(f"Email sent to {GMAIL_USER}")
+          PYTHON_SCRIPT
+
+          python3 run_brief.py
         env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
