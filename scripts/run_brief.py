@@ -153,6 +153,7 @@ news_searches = [
     ("CMOC Trafigura Mercuria cobalt copper",              "news", 3),
     ("EV battery cobalt demand aerospace defence",         "news", 3),
     ("DRC mining quota reserve export controls",           "news", 3),
+    ("cobalt copper market analysis outlook 2026",         "news", 4),  # analyst commentary layer
 ]
 news_parts = []
 for query, search_type, count in news_searches:
@@ -168,33 +169,53 @@ print("\nStep 2a: Writing sections 1-4...")
 
 SECTIONS_SYSTEM = """You are writing the daily Critical Minerals Intelligence Brief for Lobito Intelligence Group.
 AUDIENCE: procurement directors and supply chain managers at European and North American manufacturers diversifying away from Chinese-controlled supply chains.
-TONE: Intelligent, direct, data-grounded prose. Like a knowledgeable colleague, not a news wire. Never vague.
-PRICE SNAPSHOT RULES: Use the exact price lines from LIVE PRICES. Do not modify them. Format: $XX,XXX/t · Source · Date — one sentence driver. If UNAVAILABLE write [price unavailable — verify at lme.com].
-SUPPLY CHAIN SIGNALS: 2-3 paragraphs — named companies, specific volumes, specific dates. Read like a trader's morning note.
-GEOPOLITICAL RISK: 1-2 paragraphs — named actors, specific policy, concrete timeframes.
-DEMAND DRIVERS: 1 paragraph — named companies and programmes only. Never "EV demand remains strong."
-RULES: No filler phrases. Name every company/country. Cite source and date for every news item. No markdown or ## headers. Write sections 1-4 only — stop before Broker's Lens."""
+TONE: Intelligent, direct, data-grounded prose. Like a senior analyst briefing a colleague, not a news wire. Never vague. Never generic.
+
+PRICE SNAPSHOT RULES: Use the exact price lines from LIVE PRICES. Do not modify them. Format: $XX,XXX/t · Source · Date — one sentence on the structural driver (not just direction — explain why).
+
+SUPPLY CHAIN SIGNALS: 3-4 paragraphs. Each paragraph covers a distinct development.
+Structure each paragraph as two layers:
+  Layer 1 — what happened: named companies, specific volumes, specific dates from the results.
+  Layer 2 — structural implication: why this matters beyond the headline. What does it signal about the market, the counterparty, or the supply chain? What should a reader infer that isn't obvious?
+Never write a paragraph that is only Layer 1. Every signal needs its implication stated.
+
+GEOPOLITICAL RISK: 2 paragraphs. Same two-layer structure — event then implication. Name government agencies, specific policies, concrete enforcement timelines where available.
+
+DEMAND DRIVERS: 1-2 paragraphs. Named end-use sectors, specific companies, specific programmes. State what the demand development means for cobalt or copper availability specifically — not just that demand exists.
+
+RULES:
+— No filler: "it is worth noting", "in conclusion", "the situation remains fluid", "amid ongoing"
+— Name every company and country — never "a major miner" or "a Western buyer"
+— Cite source and approximate date for every factual claim
+— No markdown, no ## headers, no bullet points
+— Write sections 1-4 only — stop before Broker's Lens
+— Minimum 600 words across the four sections"""
 
 sections_prompt = f"""Today is {today}.
-=== LIVE PRICES (use exactly) ===
+=== LIVE PRICES (use exactly as written) ===
 {price_text}
-=== NEWS AND CONTEXT ===
+=== NEWS AND CONTEXT (past week) ===
 {news_text}
-Write sections 1-4:
+Write sections 1-4. Be thorough — each signal deserves its implication stated, not just its headline.
+
 Lobito Intelligence Group
 Critical Minerals Intelligence
 {today} - Daily Brief
-PRICE SNAPSHOT
-Cobalt: [exact line from LIVE PRICES] — [one sentence driver]
-Copper: [exact line from LIVE PRICES] — [one sentence driver]
-SUPPLY CHAIN SIGNALS
-[2-3 paragraphs]
-GEOPOLITICAL RISK
-[1-2 paragraphs]
-DEMAND DRIVERS
-[1 paragraph]"""
 
-sections_text = claude_haiku(SECTIONS_SYSTEM, sections_prompt, max_tokens=1100)
+PRICE SNAPSHOT
+Cobalt: [exact line from LIVE PRICES] — [one sentence: structural driver, not just direction]
+Copper: [exact line from LIVE PRICES] — [one sentence: structural driver, not just direction]
+
+SUPPLY CHAIN SIGNALS
+[3-4 paragraphs — each with event + structural implication]
+
+GEOPOLITICAL RISK
+[2 paragraphs — event + what it signals for Western buyers or suppliers]
+
+DEMAND DRIVERS
+[1-2 paragraphs — named companies and what the demand development means for cobalt/copper availability]"""
+
+sections_text = claude_haiku(SECTIONS_SYSTEM, sections_prompt, max_tokens=1800)
 print(f"  Done. {len(sections_text)} chars.")
 
 # ── STEP 2b: BROKER'S LENS ────────────────────────────────────────────────────
@@ -222,7 +243,7 @@ def snip(text, marker, chars=120):
 cobalt_ok = "$" in snip(brief,"Cobalt:") and "unavailable" not in snip(brief,"Cobalt:").lower()
 copper_ok = "$" in snip(brief,"Copper:") and "unavailable" not in snip(brief,"Copper:").lower()
 lens_ok   = len(brokers_lens) > 100
-length_ok = len(brief) > 900
+length_ok = len(brief) > 1400  # raised from 900 — richer brief should clear 1,400 chars easily
 
 flags = []
 if not cobalt_ok: flags.append("COBALT PRICE MISSING")
