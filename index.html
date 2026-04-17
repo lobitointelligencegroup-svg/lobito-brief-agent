@@ -434,6 +434,65 @@ body { background: var(--bg); color: var(--txt); font-family: var(--sans);
 .mft    { font-size: 13px; color: var(--txt2); line-height: 1.6; }
 .mnote  { font-size: 12px; color: var(--txt3); margin-top: 12px; line-height: 1.65; }
 
+/* ── OVERVIEW PAGE LAYOUT ──────────────────────────────────────────────────── */
+.ov-price-band{display:grid;grid-template-columns:1fr 1px 1fr;background:var(--s1);border-bottom:1px solid var(--bdr)}
+.ov-price-cell{padding:2.25rem 2.5rem}
+.ov-price-divider{background:var(--bdr);width:1px}
+.ov-price-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.125rem}
+.ov-commodity{font-family:var(--mono);font-size:12px;color:var(--txt3);text-transform:uppercase;letter-spacing:.11em}
+.ov-commodity-sub{color:var(--txt4);margin-left:6px}
+.ov-price-main{display:flex;align-items:flex-end;gap:12px;margin-bottom:.75rem}
+.ov-price-num{font-family:var(--serif);font-size:52px;font-weight:300;color:var(--txt);letter-spacing:-.02em;line-height:1}
+.ov-price-unit{font-family:var(--mono);font-size:14px;color:var(--txt3);margin-bottom:8px}
+.ov-price-meta{font-family:var(--mono);font-size:12px;color:var(--txt3);margin-bottom:1.25rem;min-height:18px}
+.ov-price-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.ov-stat{background:var(--s2);border:1px solid var(--bdr);border-radius:6px;padding:10px 14px}
+.ov-stat-l{font-family:var(--mono);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.ov-stat-v{font-family:var(--mono);font-size:15px;color:var(--txt);font-weight:400;margin-bottom:2px}
+.ov-stat-n{font-family:var(--mono);font-size:11px;color:var(--txt4)}
+.ov-price-insight{font-size:13px;color:var(--txt2);line-height:1.7;border-top:1px solid var(--bdr);padding-top:1rem}
+.ov-status-band{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bdr);border-bottom:1px solid var(--bdr)}
+.ov-st-cell{background:var(--s1);padding:1.375rem 1.75rem}
+.ov-st-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ov-st-label{font-family:var(--mono);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.09em}
+.ov-st-val{font-size:15px;font-weight:500;color:var(--txt);margin-bottom:5px}
+.ov-st-note{font-family:var(--mono);font-size:12px;color:var(--txt2);line-height:1.6}
+.ov-body{display:grid;grid-template-columns:1fr 360px;gap:1px;background:var(--bdr);border-bottom:1px solid var(--bdr)}
+.ov-main{background:var(--s1)}
+.ov-section-head{display:flex;align-items:center;justify-content:space-between;padding:1.125rem 1.75rem;border-bottom:1px solid var(--bdr)}
+.ov-section-title{font-family:var(--mono);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.10em}
+.ov-section-meta{font-family:var(--mono);font-size:11px;color:var(--txt4)}
+.ov-signals-footer{padding:1rem 1.75rem;border-top:1px solid var(--bdr)}
+.ov-see-all{font-family:var(--mono);font-size:12px;color:var(--gold);background:none;border:none;cursor:pointer;letter-spacing:.04em;transition:opacity .12s}
+.ov-see-all:hover{opacity:.7}
+.ov-sidebar{background:var(--s2);display:flex;flex-direction:column;gap:1px}
+.ov-sub-card{background:var(--s1);padding:1.5rem 1.75rem;border-bottom:1px solid var(--bdr)}
+.ov-sub-title{font-family:var(--serif);font-size:18px;color:var(--txt);margin-bottom:4px}
+.ov-sub-desc{font-size:13px;color:var(--txt2);margin-bottom:1rem}
+.ov-sub-form{display:flex;flex-direction:column;gap:8px}
+.ov-sub-input{width:100%;background:var(--s2);border:1px solid var(--bdr2);border-radius:6px;padding:10px 14px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:border-color .15s}
+.ov-sub-input:focus{border-color:var(--goldb)}
+.ov-sub-input::placeholder{color:var(--txt3)}
+.ov-sub-btn{width:100%;padding:11px;background:var(--goldd);border:1px solid var(--goldb);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--gold);cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
+.ov-sub-btn:hover{background:rgba(212,168,78,.16)}
+.ov-pro-card{background:var(--s1);padding:1.5rem 1.75rem;position:relative;overflow:hidden;border-bottom:1px solid var(--bdr)}
+.ov-pro-accent{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent)}
+.ov-pro-title{font-family:var(--serif);font-size:18px;color:var(--txt);margin-bottom:5px}
+.ov-pro-desc{font-size:13px;color:var(--txt2);line-height:1.65;margin-bottom:1rem}
+.ov-pro-features{display:flex;flex-direction:column;gap:7px;margin-bottom:1.125rem}
+.ov-pro-feat{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txt2)}
+.ov-pro-dot{width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.ov-pro-btn{width:100%;padding:11px;background:var(--goldd);border:1px solid var(--goldb);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--gold);cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
+.ov-pro-btn:hover{background:rgba(212,168,78,.16)}
+.ov-links-card{background:var(--s1);padding:1.25rem 1.75rem;flex:1}
+.ov-links-title{font-family:var(--mono);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.10em;margin-bottom:12px}
+.ov-link-btn{display:block;width:100%;padding:10px 14px;margin-bottom:6px;background:var(--s2);border:1px solid var(--bdr);border-radius:6px;text-align:left;font-family:var(--mono);font-size:13px;color:var(--txt2);cursor:pointer;transition:all .12s}
+.ov-link-btn:hover{background:var(--s3);color:var(--txt);border-color:var(--bdr2)}
+.ov-link-btn:last-child{margin-bottom:0}
+@media(max-width:1400px){.ov-price-num{font-size:44px}.ov-price-stats{grid-template-columns:repeat(2,1fr)}.ov-body{grid-template-columns:1fr 320px}}
+@media(max-width:1100px){.ov-price-band{grid-template-columns:1fr}.ov-price-divider{display:none}.ov-status-band{grid-template-columns:repeat(2,1fr)}.ov-body{grid-template-columns:1fr}.ov-sidebar{flex-direction:row;flex-wrap:wrap}.ov-sub-card,.ov-pro-card,.ov-links-card{flex:1;min-width:260px}}
+@media(max-width:640px){.ov-status-band{grid-template-columns:1fr}.ov-price-cell{padding:1.5rem}.ov-price-num{font-size:36px}}
+
 /* ── LOADING / ERROR ───────────────────────────────────────────────────────── */
 .ld { font-family: var(--mono); font-size: 13px; color: var(--txt3); animation: fade 1.5s ease infinite; }
 @keyframes fade { 0%,100%{opacity:.2} 50%{opacity:.8} }
@@ -483,19 +542,143 @@ body { background: var(--bg); color: var(--txt); font-family: var(--sans);
 
 <!-- OVERVIEW -->
 <div class="page active" id="pg-overview">
-<div class="grid">
-  <div class="ph"><p class="phc">Cobalt · LME indicative</p><div class="phm"><span id="co-p" class="php"><span class="ld">…</span></span><span class="phu">USD/t</span><span id="co-c"></span></div><p class="phmt" id="co-m"></p><p class="phi">Feedstock tightness — not demand recovery — is the price support. DRC chemical disruption not yet priced into spot. Q2 squeeze window open now.</p><div class="phsg"><div class="phs"><div class="phsl">LME official</div><div class="phsv" id="co-lme">$56,290</div><div class="phsn">USD/t</div></div><div class="phs"><div class="phsl">Mysteel CNY</div><div class="phsv">¥408,818</div><div class="phsn">per tonne · 14 Apr</div></div><div class="phs"><div class="phsl">YoY change</div><div class="phsv" style="color:var(--green)">+161%</div><div class="phsn">vs Apr 2025 lows</div></div><div class="phs"><div class="phsl">DRC supply share</div><div class="phsv">~73%</div><div class="phsn">global mined</div></div></div></div>
-  <div class="ph"><p class="phc">Copper · LME 3-month</p><div class="phm"><span id="cu-p" class="php"><span class="ld">…</span></span><span class="phu">USD/t</span><span id="cu-c"></span></div><p class="phmt" id="cu-m"></p><p class="phi">Section 232 tariffs repricing downstream from 6 Apr. Structural 300–500kt deficit 2026. Physical premium building as Lobito stays shut.</p><div class="phsg"><div class="phs"><div class="phsl">Spot</div><div class="phsv" id="cu-sp">$13,141</div><div class="phsn">USD/t · Kitco</div></div><div class="phs"><div class="phsl">COMEX HG</div><div class="phsv">$5.96/lb</div><div class="phsn">front month</div></div><div class="phs"><div class="phsl">YoY change</div><div class="phsv" style="color:var(--green)">+30%</div><div class="phsn">vs Apr 2025</div></div><div class="phs"><div class="phsl">Lobito premium</div><div class="phsv" style="color:var(--amber)">+10–15%</div><div class="phsn">logistics surcharge</div></div></div></div>
-  <div class="cell-sm span2" style="padding:0"><div class="stg" id="status-grid">
-    <div class="stc"><p class="stl">Lobito Corridor</p><span class="stb bc" id="st-lobito-badge">● SUSPENDED</span><p class="stv" id="st-lobito-val">Halted since 12 April</p><p class="stn" id="st-lobito-note">Flooding at Cubal &amp; Benguela. Rerouting via Durban/Dar. +10–15% logistics premium.</p></div>
-    <div class="stc"><p class="stl">Chemical Supply</p><span class="stb bc" id="st-chem-badge">● DISRUPTED</span><p class="stv" id="st-chem-val">Leaching orders cancelled</p><p class="stn" id="st-chem-note">CMOC, Glencore withdrew orders. Iranian supply chain. Output cuts possible 7–10 days.</p></div>
-    <div class="stc"><p class="stl">DRC Export Quota</p><span class="stb bh" id="st-quota-badge">⚑ ELEVATED RISK</span><p class="stv" id="st-quota-val">Strategic reserve active</p><p class="stn" id="st-quota-note">State can now stockpile unused quotas Apr 2026. Quota arbitrage likely Q3.</p></div>
-    <div class="stc"><p class="stl">Western Policy</p><span class="stb bbl" id="st-policy-badge">↑ ACCELERATING</span><p class="stv" id="st-policy-val">EU–US pact Q2 expected</p><p class="stn" id="st-policy-note">REsourceEU launched 13 Apr. Section 232 copper tariffs live 6 Apr.</p></div>
-  </div></div>
-  <div class="cell-sm" style="padding:0"><div class="ch"><span class="ct">Today's edge — top signals</span><span class="cm" id="sig-date"></span></div><div id="top-signals"><div style="padding:2rem;text-align:center"><span class="ld">Loading signals…</span></div></div></div>
-  <div class="subbar full-w"><div><p class="sbt">Get the brief at 6:30am BST</p><p class="sbs">Prices, signals and Broker's Lens every weekday. Free.</p></div><div class="sbform"><input type="email" class="sbinput" placeholder="work@company.com" id="sub-em"><button class="sbbtn" onclick="doSub()">Subscribe free →</button></div></div>
-  <div class="ft full-w"><div class="ftl">Lobito Intelligence Group · lobitointelligencegroup@gmail.com · Connecting Western buyers with responsible DRC and Copperbelt supply</div><div class="ftlinks"><a class="fta" href="mailto:lobitointelligencegroup@gmail.com">Contact</a><a class="fta" href="#" onclick="openModal()">Pro Access</a></div></div>
-</div></div>
+
+  <!-- ROW 1: PRICE BAND — full width, side by side, dominant -->
+  <div class="ov-price-band">
+    <!-- COBALT -->
+    <div class="ov-price-cell">
+      <div class="ov-price-top">
+        <span class="ov-commodity">Cobalt <span class="ov-commodity-sub">LME indicative</span></span>
+        <span id="co-c"></span>
+      </div>
+      <div class="ov-price-main">
+        <span id="co-p" class="ov-price-num"><span class="ld">…</span></span>
+        <span class="ov-price-unit">USD/t</span>
+      </div>
+      <p class="ov-price-meta" id="co-m"></p>
+      <div class="ov-price-stats">
+        <div class="ov-stat"><div class="ov-stat-l">LME official</div><div class="ov-stat-v" id="co-lme">$56,290</div><div class="ov-stat-n">USD/t</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">Mysteel CNY</div><div class="ov-stat-v">¥408,818</div><div class="ov-stat-n">14 Apr</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">YoY change</div><div class="ov-stat-v" style="color:var(--green)">+161%</div><div class="ov-stat-n">vs Apr 2025</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">DRC supply share</div><div class="ov-stat-v">~73%</div><div class="ov-stat-n">global mined</div></div>
+      </div>
+      <p class="ov-price-insight">Feedstock tightness — not demand recovery — is the price support. DRC chemical disruption not yet priced into spot. Q2 squeeze window open now.</p>
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="ov-price-divider"></div>
+
+    <!-- COPPER -->
+    <div class="ov-price-cell">
+      <div class="ov-price-top">
+        <span class="ov-commodity">Copper <span class="ov-commodity-sub">LME 3-month</span></span>
+        <span id="cu-c"></span>
+      </div>
+      <div class="ov-price-main">
+        <span id="cu-p" class="ov-price-num"><span class="ld">…</span></span>
+        <span class="ov-price-unit">USD/t</span>
+      </div>
+      <p class="ov-price-meta" id="cu-m"></p>
+      <div class="ov-price-stats">
+        <div class="ov-stat"><div class="ov-stat-l">Spot (Kitco)</div><div class="ov-stat-v" id="cu-sp">$13,141</div><div class="ov-stat-n">USD/t</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">COMEX HG</div><div class="ov-stat-v">$5.96/lb</div><div class="ov-stat-n">front month</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">YoY change</div><div class="ov-stat-v" style="color:var(--green)">+30%</div><div class="ov-stat-n">vs Apr 2025</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">Lobito premium</div><div class="ov-stat-v" style="color:var(--amber)">+10–15%</div><div class="ov-stat-n">logistics surcharge</div></div>
+      </div>
+      <p class="ov-price-insight">Section 232 tariffs repricing downstream from 6 Apr. Structural 300–500kt deficit 2026. Physical premium building as Lobito stays shut.</p>
+    </div>
+  </div>
+
+  <!-- ROW 2: STATUS BOARD — 4 tiles, full width -->
+  <div class="ov-status-band">
+    <div class="ov-st-cell">
+      <div class="ov-st-top"><span class="ov-st-label">Lobito Corridor</span><span class="stb bc" id="st-lobito-badge">● SUSPENDED</span></div>
+      <p class="ov-st-val" id="st-lobito-val">Halted since 12 April</p>
+      <p class="ov-st-note" id="st-lobito-note">Flooding at Cubal &amp; Benguela. Rerouting via Durban/Dar. +10–15% logistics premium.</p>
+    </div>
+    <div class="ov-st-cell">
+      <div class="ov-st-top"><span class="ov-st-label">Chemical Supply</span><span class="stb bc" id="st-chem-badge">● DISRUPTED</span></div>
+      <p class="ov-st-val" id="st-chem-val">Leaching orders cancelled</p>
+      <p class="ov-st-note" id="st-chem-note">CMOC, Glencore withdrew orders. Iranian supply chain disruption. Output cuts possible within 7–10 days.</p>
+    </div>
+    <div class="ov-st-cell">
+      <div class="ov-st-top"><span class="ov-st-label">DRC Export Quota</span><span class="stb bh" id="st-quota-badge">⚑ ELEVATED RISK</span></div>
+      <p class="ov-st-val" id="st-quota-val">Strategic reserve active</p>
+      <p class="ov-st-note" id="st-quota-note">State can now stockpile unused quotas Apr 2026. Quota arbitrage likely Q3.</p>
+    </div>
+    <div class="ov-st-cell">
+      <div class="ov-st-top"><span class="ov-st-label">Western Policy</span><span class="stb bbl" id="st-policy-badge">↑ ACCELERATING</span></div>
+      <p class="ov-st-val" id="st-policy-val">EU–US pact Q2 expected</p>
+      <p class="ov-st-note" id="st-policy-note">REsourceEU launched 13 Apr. Section 232 copper tariffs live 6 Apr.</p>
+    </div>
+  </div>
+
+  <!-- ROW 3: MAIN CONTENT — signals (wide) + sidebar (narrow) -->
+  <div class="ov-body">
+
+    <!-- SIGNALS — main column -->
+    <div class="ov-main">
+      <div class="ov-section-head">
+        <span class="ov-section-title">Today's edge signals</span>
+        <span class="ov-section-meta" id="sig-date"></span>
+      </div>
+      <div id="top-signals">
+        <div style="padding:3rem;text-align:center"><span class="ld">Loading signals…</span></div>
+      </div>
+      <div class="ov-signals-footer">
+        <button class="ov-see-all" onclick="nav(document.querySelectorAll('.nav-pill')[1],'signals')">See all signals →</button>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="ov-sidebar">
+
+      <!-- SUBSCRIBE -->
+      <div class="ov-sub-card">
+        <p class="ov-sub-title">Get the brief at 6:30am</p>
+        <p class="ov-sub-desc">Prices, signals and Broker's Lens every weekday. Free.</p>
+        <div class="ov-sub-form">
+          <input type="email" class="ov-sub-input" placeholder="work@company.com" id="sub-em">
+          <button class="ov-sub-btn" onclick="doSub()">Subscribe →</button>
+        </div>
+      </div>
+
+      <!-- PRO ACCESS -->
+      <div class="ov-pro-card">
+        <div class="ov-pro-accent"></div>
+        <p class="ov-pro-title">Pro Access</p>
+        <p class="ov-pro-desc">Early deal flow, weekly market call, direct line to the broker. Free — we earn on completed introductions only.</p>
+        <div class="ov-pro-features">
+          <div class="ov-pro-feat"><span class="ov-pro-dot"></span>Early sight of deal opportunities</div>
+          <div class="ov-pro-feat"><span class="ov-pro-dot"></span>Weekly 30-min market call</div>
+          <div class="ov-pro-feat"><span class="ov-pro-dot"></span>Direct line — same-day response</div>
+          <div class="ov-pro-feat"><span class="ov-pro-dot"></span>Named in buyer/supplier network</div>
+        </div>
+        <button class="ov-pro-btn" onclick="openModal()">Request Pro Access →</button>
+      </div>
+
+      <!-- QUICK LINKS -->
+      <div class="ov-links-card">
+        <p class="ov-links-title">Jump to</p>
+        <button class="ov-link-btn" onclick="nav(document.querySelectorAll('.nav-pill')[2],'prices')">Price Intelligence →</button>
+        <button class="ov-link-btn" onclick="nav(document.querySelectorAll('.nav-pill')[3],'action')">What to Do Today →</button>
+        <button class="ov-link-btn" onclick="nav(document.querySelectorAll('.nav-pill')[4],'brief')">Daily Brief →</button>
+        <button class="ov-link-btn" onclick="nav(document.querySelectorAll('.nav-pill')[5],'intel')">Market Intel →</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ROW 4: FOOTER -->
+  <div class="ft" style="border-top:1px solid var(--bdr)">
+    <div class="ftl">Lobito Intelligence Group · lobitointelligencegroup@gmail.com · Connecting Western buyers with responsible DRC and Copperbelt supply</div>
+    <div class="ftlinks">
+      <a class="fta" href="mailto:lobitointelligencegroup@gmail.com">Contact</a>
+      <a class="fta" href="#" onclick="openModal()">Pro Access</a>
+    </div>
+  </div>
+
+</div>
 
 <!-- SIGNALS -->
 <div class="page" id="pg-signals">
