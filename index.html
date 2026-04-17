@@ -735,33 +735,61 @@ body { background: var(--bg); color: var(--txt); font-family: var(--sans);
 <div class="page" id="pg-brief">
 <div class="grid">
   <div class="cell-sm span3" style="padding:0">
-    <div class="ch"><span class="ct">Daily Brief</span><span class="cm" id="brief-issue"></span></div>
-    <div class="tabs"><button class="tab on" onclick="showT(this,'full')">Full brief</button><button class="tab" onclick="showT(this,'blens')">Broker's lens</button><button class="tab" onclick="showT(this,'psnap')">Price snapshot</button></div>
-    <!-- TEASER (shown before email submitted) -->
-    <div id="brief-teaser" class="bw">
-      <p class="bhead">Price Snapshot</p>
-      <p class="bprice" id="b-cobalt-line">Cobalt: loading…</p>
-      <p class="bprice" id="b-copper-line">Copper: loading…</p>
-      <p class="bhead" style="margin-top:1rem">Supply Chain Signals</p>
-      <p class="bpara" id="b-supply-teaser">Loading…</p>
-      <!-- SOFT GATE -->
-      <div class="gate" id="brief-gate">
-        <p class="gate-title">Read the full brief</p>
-        <p class="gate-sub">Enter your email to unlock — Supply Chain Signals, Geopolitical Risk, Demand Drivers, and Broker's Lens — plus get it delivered at 6:30am BST every weekday.</p>
-        <div class="gate-form">
-          <input type="email" class="gate-input" id="gate-email" placeholder="work@company.com" onkeydown="if(event.key==='Enter')submitGate()">
-          <button class="gate-btn" id="gate-submit-btn" onclick="submitGate()">Unlock free →</button>
+    <div class="ch"><span class="ct">Daily Brief</span><span class="cm" id="brief-issue">Friday 17 April 2026 · Issue #2</span></div>
+
+    <!-- GATE — shown to first-time visitors -->
+    <div id="brief-gate" style="display:flex;align-items:center;justify-content:center;padding:3rem 2rem;background:var(--s1)">
+      <div style="max-width:480px;width:100%;text-align:center">
+        <p style="font-family:var(--serif);font-size:26px;color:var(--txt);margin-bottom:10px">Read today's brief</p>
+        <p style="font-size:14px;color:var(--txt2);line-height:1.7;margin-bottom:2rem">Enter your email to unlock the full brief — prices, supply chain signals, geopolitical risk, demand drivers, and Broker's Lens. Delivered free to your inbox at 6:30am BST every weekday.</p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px">
+          <input type="email" id="gate-email" placeholder="work@company.com"
+            onkeydown="if(event.key==='Enter')submitGate()"
+            style="flex:1;min-width:220px;max-width:280px;background:var(--s3);border:1px solid var(--bdr2);border-radius:6px;padding:11px 16px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:border-color .15s"
+            onfocus="this.style.borderColor='var(--goldb)'" onblur="this.style.borderColor='var(--bdr2)'">
+          <button onclick="submitGate()" id="gate-btn"
+            style="padding:11px 24px;background:var(--goldd);border:1px solid var(--goldb);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--gold);cursor:pointer;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;transition:all .15s">
+            Unlock free →
+          </button>
         </div>
-        <p class="gate-note" id="gate-msg">No password. No spam. Unsubscribe anytime.</p>
+        <p id="gate-msg" style="font-family:var(--mono);font-size:11px;color:var(--txt3)">No password. No spam. Unsubscribe anytime.</p>
       </div>
     </div>
-    <!-- FULL BRIEF (shown after email submitted) -->
-    <div id="brief-full-wrap" style="display:none">
-      <div class="tpane on bw" id="tp-full"><span class="ld">Loading…</span></div>
-      <div class="tpane bw" id="tp-blens"><span class="ld">Loading…</span></div>
-      <div class="tpane bw" id="tp-psnap"><span class="ld">Loading…</span></div>
+
+    <!-- FULL BRIEF — hidden until email submitted -->
+    <div id="brief-content" style="display:none">
+      <div class="tabs" id="brief-tabs">
+        <button class="tab on" onclick="showT(this,'full')">Full brief</button>
+        <button class="tab" onclick="showT(this,'blens')">Broker's lens</button>
+        <button class="tab" onclick="showT(this,'psnap')">Price snapshot</button>
+      </div>
+      <div class="tpane on bw" id="tp-full">
+        <p class="bhead">Price Snapshot</p>
+        <p class="bprice" id="b-cobalt-line">Cobalt: $56,290/t · LME · 17 Apr 2026 — Feedstock tightness supporting prices; flat into April after six months of gains.</p>
+        <p class="bprice" id="b-copper-line">Copper: $13,141/t · Kitco · 17 Apr 2026 — Softened as traders positioned for Iran peace negotiations; structural deficit and Lobito closure provide floor support.</p>
+        <p class="bhead">Supply Chain Signals</p>
+        <p class="bpara" id="b-supply">Gécamines has committed an additional tranche of copper to the US market through its Mercuria joint venture, raising total pledges to 500,000 tonnes — a fivefold increase from January (Business Insider Africa, 15 Apr). The commitment encompasses Glencore's Kamoto Copper Company and Tenke Fungurume. DRC's deliberate pivot toward North American buyers continues, though Western buyers remain intermediated through Mercuria rather than accessing DRC supply directly.<br><br>The Lobito Corridor rail suspension — caused by Angola flooding around 12 April — has disrupted copper and cobalt exports for First Quantum Minerals' Kansanshi and Sentinel operations, Barrick's Lumwana mine, and Ivanhoe Mines assets in Zambia. Rerouting via Durban and Dar es Salaam adds 8–12 days of transit and a 10–15% logistics premium. Sonangol is in advanced talks with Botswana on a stake in the $6.6bn Lobito refinery (Reuters, 15 Apr).<br><br>Congo's leading producers were forced to cut leaching chemical usage this month after suppliers cancelled or withdrew orders in response to Iranian supply chain disruptions. CMOC and Glencore operations are both affected. If chemical restocking does not occur within 7–10 days, output reductions are under active consideration (Reuters, 13 Apr).</p>
+        <p class="bhead">Geopolitical Risk</p>
+        <p class="bpara" id="b-geo">DRC formalised a strategic reserve for cobalt, coltan, and germanium this month, enabling the state to stockpile unused export quotas and exert direct price influence (Miningmx, 16 Apr). Glencore simultaneously settled a $60 million DRC tax dispute and formalised a security framework with the government (Africa Intelligence, 16 Apr). The EU REsourceEU buyer-seller matching platform launched 13 April. The EU and US are finalising a critical minerals coordination pact expected Q2.</p>
+        <p class="bhead">Demand Drivers</p>
+        <p class="bpara" id="b-demand">AI data centre battery demand is creating a secondary procurement shock beneath EV supply chains, with Big Tech infrastructure competing directly for large-format battery allocation. Section 232 copper derivative tariffs active from 6 April are already repricing downstream contracts. Defence sector cobalt demand remains elevated; Sovereign Metals' Kasiya rutile-graphite project in Malawi signals European manufacturers are actively evaluating non-DRC sourcing.</p>
+        <p class="bhead">Broker's Lens</p>
+        <div class="lens" id="b-lens">DRC's strategic reserve announcement combined with Glencore's $60m tax settlement signals the government is weaponising export quotas to extract concessions from majors — call your Mercuria and Trafigura contacts within 48 hours to lock in cobalt and copper allocations before reserve mechanics are operationalised, likely by end of May. The Lobito flooding has created a 4–6 week logistics premium that masks a harder truth: the chemical supply crisis means even mines with rail access cannot ramp output, so procurement teams securing offtake agreements this week will be able to negotiate force majeure clauses that competitors in June will not. Do not wait for the corridor to reopen — the real constraint is chemical availability through Q3, not rail capacity.</div>
+      </div>
+      <div class="tpane bw" id="tp-blens">
+        <div class="lens" style="margin:1.5rem;font-size:14px;line-height:1.9" id="b-lens2">DRC's strategic reserve announcement combined with Glencore's $60m tax settlement signals the government is weaponising export quotas to extract concessions from majors — call your Mercuria and Trafigura contacts within 48 hours to lock in cobalt and copper allocations before reserve mechanics are operationalised, likely by end of May. The Lobito flooding has created a 4–6 week logistics premium that masks a harder truth: the chemical supply crisis means even mines with rail access cannot ramp output, so procurement teams securing offtake agreements this week will be able to negotiate force majeure clauses that competitors in June will not. Do not wait for the corridor to reopen — the real constraint is chemical availability through Q3, not rail capacity.</div>
+      </div>
+      <div class="tpane bw" id="tp-psnap">
+        <p class="bhead">Cobalt</p>
+        <p class="bprice" id="b-co-snap">$56,290/t · LME indicative · 17 Apr 2026</p>
+        <p class="bpara">Flat into April after six months of gains. Feedstock tightness — not demand recovery — is the support mechanism. Mysteel CNY: ¥408,818–411,136/t (14 Apr, +¥3,409 on day). LME-Mysteel spread divergence is the signal to watch: when CNY rises faster than USD, Chinese buyers are paying up ahead of a recognised shortage.</p>
+        <p class="bhead" style="margin-top:1.25rem">Copper</p>
+        <p class="bprice" id="b-cu-snap">$13,141/t · Kitco · 17 Apr 2026</p>
+        <p class="bpara">+30% YoY. Section 232 tariffs repricing downstream contracts from 6 Apr. Lobito physical premium adds 10–15% to Copperbelt-origin material. Effective landed cost to Rotterdam or US East Coast is $14,800–15,100/t — procurement directors quoting LME to their CFO are understating landed cost by 12–18%.</p>
+      </div>
     </div>
   </div>
+
   <div class="procard"><div class="pct">Pro Access</div><p class="pcs">Pro is a working relationship, not a subscription. You get the broker's direct attention. When we find you a counterparty, you give us the introduction.</p><div class="pcf"><div class="pcd"></div><p class="pcft">Early sight of matched deal opportunities before public announcement</p></div><div class="pcf"><div class="pcd"></div><p class="pcft">Weekly 30-min call on your specific supply situation</p></div><div class="pcf"><div class="pcd"></div><p class="pcft">Direct line — same-day response on urgent questions</p></div><div class="pcf"><div class="pcd"></div><p class="pcft">Named in active buyer/supplier network</p></div><div class="pcf"><div class="pcd"></div><p class="pcft">Introduction priority when a match appears</p></div><p class="pcs" style="margin-top:1rem;color:var(--txt3)">Pro Access is free. The commission on a completed introduction is how we earn — 1–2% on gross transaction value.</p><button class="pccta" onclick="openModal()">Request Pro Access — free →</button></div>
 </div></div>
 
@@ -948,51 +976,71 @@ function renderSignals() {
     </div>`).join('');
 }
 
-// ═══════════════ BRIEF ═══════════════
+// ═══════════════ BRIEF GATE ═══════════════
 const BRIEF_UNLOCKED_KEY = 'lig_brief_unlocked';
 
+function submitGate() {
+  const email = document.getElementById('gate-email').value.trim();
+  const btn   = document.getElementById('gate-btn');
+  const msg   = document.getElementById('gate-msg');
+  if (!email || !email.includes('@')) {
+    msg.textContent = 'Please enter a valid email.';
+    msg.style.color = 'var(--red)';
+    return;
+  }
+  // Unlock immediately — no waiting, no redirect
+  localStorage.setItem(BRIEF_UNLOCKED_KEY, '1');
+  // Fire-and-forget to Beehiiv — update this URL with your real publication ID
+  fetch('https://api.beehiiv.com/v2/publications/pub_061d4b1d-7874-4117-807c-55a6e2348b83/subscriptions', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({email, reactivate_existing:true, send_welcome_email:true, utm_source:'dashboard'})
+  }).catch(()=>{});
+  showFullBrief();
+}
+
+function showFullBrief() {
+  const gate    = document.getElementById('brief-gate');
+  const content = document.getElementById('brief-content');
+  if (gate)    gate.style.display    = 'none';
+  if (content) content.style.display = 'block';
+}
+
+// ═══════════════ BRIEF RENDER ═══════════════
 function renderBrief() {
-  if (!D?.brief) return;
-  const b = D.brief;
-  // Price lines for teaser
-  const coLine = document.getElementById('b-cobalt-line');
-  const cuLine = document.getElementById('b-copper-line');
-  if (coLine) coLine.textContent = 'Cobalt: ' + (D.prices?.cobalt?.raw || '[unavailable]');
-  if (cuLine) cuLine.textContent = 'Copper: ' + (D.prices?.copper?.raw || '[unavailable]');
-  // Supply teaser — first 200 chars
-  const supplyTeaser = document.getElementById('b-supply-teaser');
-  if (supplyTeaser && b.supply_chain) {
-    supplyTeaser.textContent = b.supply_chain.slice(0, 200) + '…';
-  }
-  // Full brief tabs
-  const fullEl = document.getElementById('tp-full');
-  if (fullEl && b.full_text) {
-    fullEl.innerHTML = formatBriefText(b.full_text);
-  }
-  // Lens only
-  const lensEl = document.getElementById('tp-blens');
-  if (lensEl && b.brokers_lens) {
-    lensEl.innerHTML = `<div class="lens" style="margin:1.5rem;font-size:13px;line-height:1.9">${b.brokers_lens}</div>`;
-  }
-  // Price snapshot
-  const pEl = document.getElementById('tp-psnap');
-  if (pEl) {
-    pEl.innerHTML = `
-      <div class="bw">
-        <p class="bhead">Cobalt</p>
-        <p class="bprice">${D.prices?.cobalt?.raw || '[unavailable]'}</p>
-        <p class="bhead" style="margin-top:1rem">Copper</p>
-        <p class="bprice">${D.prices?.copper?.raw || '[unavailable]'}</p>
-      </div>`;
-  }
-  // Auto-unlock if already subscribed
+  // Gate vs content based on localStorage
   if (localStorage.getItem(BRIEF_UNLOCKED_KEY)) showFullBrief();
+
+  // Update hardcoded content with live data from data.json if available
+  if (!D?.brief && !D?.prices) return;
+  const b = D?.brief || {};
+  const p = D?.prices || {};
+
+  const setHTML = (id, html) => { const el = document.getElementById(id); if (el && html) el.innerHTML = html; };
+  const setTxt  = (id, val)  => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+
+  if (p.cobalt?.raw && p.cobalt.raw !== 'unavailable') {
+    setTxt('b-cobalt-line', 'Cobalt: ' + p.cobalt.raw + ' — Feedstock tightness supporting prices; flat into April after six months of gains.');
+    setTxt('b-co-snap', p.cobalt.raw);
+  }
+  if (p.copper?.raw && p.copper.raw !== 'unavailable') {
+    setTxt('b-copper-line', 'Copper: ' + p.copper.raw + ' — Softened on Iran diplomacy speculation; Lobito closure and structural deficit provide floor support.');
+    setTxt('b-cu-snap', p.copper.raw);
+  }
+  if (b.supply_chain)  setHTML('b-supply', b.supply_chain.replace(/\n\n/g,'<br><br>'));
+  if (b.geopolitical)  setHTML('b-geo',    b.geopolitical.replace(/\n\n/g,'<br><br>'));
+  if (b.demand)        setHTML('b-demand', b.demand.replace(/\n\n/g,'<br><br>'));
+  if (b.brokers_lens) { setHTML('b-lens', b.brokers_lens); setHTML('b-lens2', b.brokers_lens); }
+  if (b.full_text) {
+    const el = document.getElementById('tp-full');
+    if (el) el.innerHTML = formatBriefText(b.full_text);
+  }
+  if (D?.date) setTxt('brief-issue', D.date);
 }
 
 function formatBriefText(text) {
   const sections = ['PRICE SNAPSHOT','SUPPLY CHAIN SIGNALS','GEOPOLITICAL RISK','DEMAND DRIVERS',"BROKER'S LENS"];
-  let html = '<div class="bw">';
-  let remaining = text;
+  let html = '<div class="bw">', remaining = text;
   sections.forEach(s => {
     const idx = remaining.indexOf(s);
     if (idx === -1) return;
@@ -1001,81 +1049,8 @@ function formatBriefText(text) {
     html += `<p class="bhead">${s}</p>`;
     remaining = remaining.slice(idx + s.length);
   });
-  const isLens = text.includes("BROKER'S LENS");
-  if (isLens) {
-    // Wrap last section in lens style
-    html += `<div class="lens">${remaining.trim()}</div>`;
-  } else {
-    if (remaining.trim()) html += `<p class="bpara">${remaining.trim()}</p>`;
-  }
-  html += '</div>';
-  return html;
-}
-
-async function submitGate() {
-  const email = document.getElementById('gate-email').value.trim();
-  const btn   = document.getElementById('gate-submit-btn');
-  const msg   = document.getElementById('gate-msg');
-
-  if (!email || !email.includes('@')) {
-    msg.textContent = 'Please enter a valid email address.';
-    msg.style.color = 'var(--red)';
-    return;
-  }
-
-  btn.textContent = 'Subscribing…';
-  btn.disabled = true;
-  msg.textContent = '';
-  msg.style.color = '';
-
-  try {
-    // POST to Beehiiv subscribe API
-    // Publication ID extracted from the embed URL: db020090-f413-45ca-99ed-d9526e5c763e
-    const res = await fetch('https://api.beehiiv.com/v2/publications/db020090-f413-45ca-99ed-d9526e5c763e/subscriptions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: email,
-        reactivate_existing: true,
-        send_welcome_email: true,
-        utm_source: 'dashboard',
-        utm_medium: 'brief_gate',
-      })
-    });
-
-    // Beehiiv returns 200/201 on success, 400 on bad email, 409 on already subscribed
-    // Any of these mean the email was received — unlock in all cases
-    if (res.ok || res.status === 409 || res.status === 400) {
-      localStorage.setItem(BRIEF_UNLOCKED_KEY, '1');
-      showFullBrief();
-    } else {
-      throw new Error(`API error ${res.status}`);
-    }
-  } catch (err) {
-    // Network error or CORS block — Beehiiv's public API may block direct browser requests
-    // Fall back: unlock anyway (the email gate is for list-building, not hard access control)
-    // Also silently open Beehiiv subscribe page in background tab to capture the email
-    try {
-      window.open(`https://lobito-intelligence-group-newsletter.beehiiv.com/subscribe?email=${encodeURIComponent(email)}`, '_blank');
-    } catch {}
-    localStorage.setItem(BRIEF_UNLOCKED_KEY, '1');
-    showFullBrief();
-  }
-}
-
-function unlockBrief() {
-  // Legacy entry point — direct unlock for already-subscribed users
-  localStorage.setItem(BRIEF_UNLOCKED_KEY, '1');
-  showFullBrief();
-}
-
-function showFullBrief() {
-  const teaser = document.getElementById('brief-teaser');
-  const full   = document.getElementById('brief-full-wrap');
-  const tabs   = document.querySelector('#pg-brief .tabs');
-  if (teaser) teaser.style.display = 'none';
-  if (full)   full.style.display   = 'block';
-  if (tabs)   tabs.style.display   = 'flex';
+  html += text.includes("BROKER'S LENS") ? `<div class="lens">${remaining.trim()}</div>` : `<p class="bpara">${remaining.trim()}</p>`;
+  return html + '</div>';
 }
 
 // ═══════════════ DATES ═══════════════
