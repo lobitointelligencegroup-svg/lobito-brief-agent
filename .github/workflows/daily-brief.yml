@@ -72,11 +72,12 @@ jobs:
           Connecting Western buyers with responsible DRC and Copperbelt supply.
           Published weekdays. Forward to a colleague in procurement, supply chain, or commodities."""
 
-          def call_api(messages):
+          def call_api(messages, attempt=0):
+              import time
               body = json.dumps({
                   "model": "claude-sonnet-4-6",
                   "max_tokens": 2000,
-                  "tools": [{"type": "web_search_20260209", "name": "web_search", "max_uses": 8}],
+                  "tools": [{"type": "web_search_20260209", "name": "web_search", "max_uses": 5}],
                   "system": SYSTEM,
                   "messages": messages
               }).encode()
@@ -90,8 +91,16 @@ jobs:
                       "content-type": "application/json"
                   }
               )
-              with urllib.request.urlopen(req, timeout=120) as resp:
-                  return json.loads(resp.read())
+              try:
+                  with urllib.request.urlopen(req, timeout=120) as resp:
+                      return json.loads(resp.read())
+              except urllib.error.HTTPError as e:
+                  if e.code == 429 and attempt < 4:
+                      wait = (2 ** attempt) * 30  # 30s, 60s, 120s, 240s
+                      print(f"Rate limited (429). Waiting {wait}s before retry {attempt + 1}/4...")
+                      time.sleep(wait)
+                      return call_api(messages, attempt + 1)
+                  raise
 
           # Turn 1 — initial request
           messages = [{"role": "user", "content": USER}]
@@ -104,6 +113,10 @@ jobs:
           while data.get("stop_reason") == "tool_use" and turn < max_turns:
               turn += 1
               print(f"Tool use turn {turn}")
+
+              # Small delay between turns to stay within rate limits
+              import time
+              time.sleep(8)
 
               # Add Claude's response to messages
               messages.append({"role": "assistant", "content": data["content"]})
