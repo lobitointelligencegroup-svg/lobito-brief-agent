@@ -1,0 +1,79 @@
+name: Daily Critical Minerals Brief
+
+on:
+  schedule:
+    # Runs at 6:00 AM UTC Monday-Friday
+    # Adjust offset if you want UK time (UTC+1 BST = 5:00 UTC)
+    - cron: '0 5 * * 1-5'
+  workflow_dispatch: # allows manual trigger from GitHub UI
+
+jobs:
+  generate-brief:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Generate brief via Claude API with web search
+        id: claude
+        run: |
+          TODAY=$(date '+%A %-d %B %Y')
+          
+          RESPONSE=$(curl -s -X POST https://api.anthropic.com/v1/messages \
+            -H "x-api-key: ${{ secrets.ANTHROPIC_API_KEY }}" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d "{
+              \"model\": \"claude-sonnet-4-6\",
+              \"max_tokens\": 2000,
+              \"tools\": [{
+                \"type\": \"web_search_20260209\",
+                \"name\": \"web_search\",
+                \"max_uses\": 8
+              }],
+              \"system\": \"You are the research and editorial engine for Lobito Intelligence Group. Write the daily Critical Minerals Intelligence brief. Use web search for every brief — never rely on training data for prices or news. Search LME directly for today's prices. Only include news from the last 48 hours. Name every company. Cite every price with source and date. The Broker's Lens must be specific and actionable — never generic.\",
+              \"messages\": [{
+                \"role\": \"user\",
+                \"content\": \"Research and write today's Critical Minerals Intelligence Brief. Today is $TODAY.\n\n1. Search 'LME cobalt price today' — get cash price USD/t and direction vs yesterday\n2. Search 'LME copper price today' — get 3-month price USD/t and direction\n3. Search 'DRC cobalt supply chain news today' — last 48 hours only\n4. Search 'critical minerals Western buyer supplier deal news today' — last 48 hours only\n5. Search 'Lobito corridor cobalt copper news today'\n\nWrite in this exact format:\n\nLobito Intelligence Group\nCritical Minerals Intelligence\n$TODAY · Daily Brief\n\nPRICE SNAPSHOT\nCobalt: [price] USD/t ([source], [date]) — [direction]. [One-line context.]\nCopper: [price] USD/t ([source], [date]) — [direction]. [One-line context.]\n\nSUPPLY CHAIN SIGNALS\n[2-3 paragraphs, named companies, specific volumes, specific dates]\n\nGEOPOLITICAL RISK\n[1-2 paragraphs, named actors, specific policies, specific timelines]\n\nDEMAND DRIVERS\n[1 paragraph, named companies, named programmes, specific volumes]\n\nBROKER'S LENS\n[3-4 sentences. What should a Western procurement director do differently THIS WEEK based on today's specific developments? Name actions, timeframes, counterparty types. Never use 'it is worth noting' or 'the situation remains fluid'.]\n\n—\nConnecting Western buyers with responsible DRC and Copperbelt supply.\nPublished weekdays. Forward to a colleague in procurement, supply chain, or commodities.\"
+              }]
+            }")
+          
+          # Extract text content from response
+          BRIEF=$(echo "$RESPONSE" | python3 -c "
+          import sys, json
+          data = json.load(sys.stdin)
+          texts = [b['text'] for b in data.get('content', []) if b.get('type') == 'text']
+          print('\n'.join(texts))
+          ")
+          
+          # Save brief to file for email step
+          echo "$BRIEF" > brief.txt
+          echo "Brief generated successfully"
+
+      - name: Send brief via Gmail
+        run: |
+          TODAY=$(date '+%a %-d %b %Y')
+          BRIEF=$(cat brief.txt)
+          
+          python3 << 'EOF'
+          import smtplib
+          import os
+          from email.mime.text import MIMEText
+          from datetime import datetime
+          
+          brief = open('brief.txt').read()
+          today = datetime.now().strftime('%a %-d %b %Y')
+          
+          msg = MIMEText(brief, 'plain', 'utf-8')
+          msg['Subject'] = f'📋 Brief ready — {today}'
+          msg['From'] = os.environ['GMAIL_USER']
+          msg['To'] = os.environ['GMAIL_USER']
+          
+          with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+              server.login(os.environ['GMAIL_USER'], os.environ['GMAIL_APP_PASSWORD'])
+              server.send_message(msg)
+          
+          print(f'Brief sent to {os.environ["GMAIL_USER"]}')
+          EOF
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
