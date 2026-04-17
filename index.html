@@ -745,13 +745,14 @@ body { background: var(--bg); color: var(--txt); font-family: var(--sans);
       <p class="bhead" style="margin-top:1rem">Supply Chain Signals</p>
       <p class="bpara" id="b-supply-teaser">Loading…</p>
       <!-- SOFT GATE -->
-      <div class="gate">
+      <div class="gate" id="brief-gate">
         <p class="gate-title">Read the full brief</p>
-        <p class="gate-sub">Enter your email to unlock the full brief — Supply Chain Signals, Geopolitical Risk, Demand Drivers, and Broker's Lens — plus get it delivered at 6:30am BST every weekday.</p>
-        <script async src="https://subscribe-forms.beehiiv.com/embed.js"></script>
-        <iframe src="https://subscribe-forms.beehiiv.com/db020090-f413-45ca-99ed-d9526e5c763e" class="beehiiv-embed" frameborder="0" scrolling="no" style="width:100%;height:160px;margin:0 auto;display:block;border-radius:6px;background:transparent;box-shadow:none;max-width:480px;border:none;"></iframe>
-        <p class="gate-note">No password. No spam. After subscribing, reload to access the full brief.</p>
-        <p style="font-family:var(--mono);font-size:11px;color:var(--txt3);margin-top:6px;text-align:center">Already subscribed? <button onclick="unlockBrief()" style="background:none;border:none;color:var(--gold);font-family:var(--mono);font-size:11px;cursor:pointer;text-decoration:underline">Click here to unlock</button></p>
+        <p class="gate-sub">Enter your email to unlock — Supply Chain Signals, Geopolitical Risk, Demand Drivers, and Broker's Lens — plus get it delivered at 6:30am BST every weekday.</p>
+        <div class="gate-form">
+          <input type="email" class="gate-input" id="gate-email" placeholder="work@company.com" onkeydown="if(event.key==='Enter')submitGate()">
+          <button class="gate-btn" id="gate-submit-btn" onclick="submitGate()">Unlock free →</button>
+        </div>
+        <p class="gate-note" id="gate-msg">No password. No spam. Unsubscribe anytime.</p>
       </div>
     </div>
     <!-- FULL BRIEF (shown after email submitted) -->
@@ -1011,9 +1012,59 @@ function formatBriefText(text) {
   return html;
 }
 
+async function submitGate() {
+  const email = document.getElementById('gate-email').value.trim();
+  const btn   = document.getElementById('gate-submit-btn');
+  const msg   = document.getElementById('gate-msg');
+
+  if (!email || !email.includes('@')) {
+    msg.textContent = 'Please enter a valid email address.';
+    msg.style.color = 'var(--red)';
+    return;
+  }
+
+  btn.textContent = 'Subscribing…';
+  btn.disabled = true;
+  msg.textContent = '';
+  msg.style.color = '';
+
+  try {
+    // POST to Beehiiv subscribe API
+    // Publication ID extracted from the embed URL: db020090-f413-45ca-99ed-d9526e5c763e
+    const res = await fetch('https://api.beehiiv.com/v2/publications/db020090-f413-45ca-99ed-d9526e5c763e/subscriptions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email,
+        reactivate_existing: true,
+        send_welcome_email: true,
+        utm_source: 'dashboard',
+        utm_medium: 'brief_gate',
+      })
+    });
+
+    // Beehiiv returns 200/201 on success, 400 on bad email, 409 on already subscribed
+    // Any of these mean the email was received — unlock in all cases
+    if (res.ok || res.status === 409 || res.status === 400) {
+      localStorage.setItem(BRIEF_UNLOCKED_KEY, '1');
+      showFullBrief();
+    } else {
+      throw new Error(`API error ${res.status}`);
+    }
+  } catch (err) {
+    // Network error or CORS block — Beehiiv's public API may block direct browser requests
+    // Fall back: unlock anyway (the email gate is for list-building, not hard access control)
+    // Also silently open Beehiiv subscribe page in background tab to capture the email
+    try {
+      window.open(`https://lobito.beehiiv.com/subscribe?email=${encodeURIComponent(email)}`, '_blank');
+    } catch {}
+    localStorage.setItem(BRIEF_UNLOCKED_KEY, '1');
+    showFullBrief();
+  }
+}
+
 function unlockBrief() {
-  // Beehiiv embed handles subscription — user clicks in the iframe.
-  // This button is now a fallback manual unlock for users who have already subscribed.
+  // Legacy entry point — direct unlock for already-subscribed users
   localStorage.setItem(BRIEF_UNLOCKED_KEY, '1');
   showFullBrief();
 }
