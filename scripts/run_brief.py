@@ -1,13 +1,8 @@
 import os
 import time
 import smtplib
-import subprocess
-import sys
 from datetime import datetime
 from email.mime.text import MIMEText
-
-# Install anthropic SDK — handles connection keepalive correctly
-subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "anthropic"])
 import anthropic
 
 API_KEY = os.environ["ANTHROPIC_API_KEY"]
