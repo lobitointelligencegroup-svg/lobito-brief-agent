@@ -1,177 +1,241 @@
+"""
+Lobito Intelligence Group — Daily Brief Agent
+Architecture:
+  Step 1: Brave News Search API — 8 targeted queries, freshness=pd (past 24h)
+           Fast JSON responses, no long connections, ~1s per query
+  Step 2: Claude Haiku — synthesises raw search results into formatted brief
+           No web search tool, pure writing, completes in ~5s
+  Step 3: Gmail — sends draft to inbox
+"""
+
 import os
 import time
+import json
 import smtplib
+import urllib.request
+import urllib.parse
 from datetime import datetime
 from email.mime.text import MIMEText
-import anthropic
 
-API_KEY = os.environ["ANTHROPIC_API_KEY"]
-GMAIL_USER = os.environ["GMAIL_USER"]
-GMAIL_PASS = os.environ["GMAIL_APP_PASSWORD"]
-today = datetime.now().strftime("%A %-d %B %Y")
+# ── CONFIG ────────────────────────────────────────────────────────────────────
+ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
+BRAVE_API_KEY     = os.environ["BRAVE_API_KEY"]
+GMAIL_USER        = os.environ["GMAIL_USER"]
+GMAIL_PASS        = os.environ["GMAIL_APP_PASSWORD"]
+
+today       = datetime.now().strftime("%A %-d %B %Y")
 today_short = datetime.now().strftime("%a %-d %b %Y")
 
-client = anthropic.Anthropic(api_key=API_KEY, timeout=180.0)
-
-
-def call_api(model, system, messages, use_web_search=False, attempt=0):
-    kwargs = {
-        "model": model,
-        "max_tokens": 1000,
-        "system": system,
-        "messages": messages,
-    }
-    if use_web_search:
-        kwargs["tools"] = [{"type": "web_search_20260209", "name": "web_search", "max_uses": 3}]
+# ── BRAVE SEARCH ──────────────────────────────────────────────────────────────
+def brave_news(query, count=5):
+    """Call Brave News Search API. Returns list of {title, description, url, age}."""
+    params = urllib.parse.urlencode({
+        "q":         query,
+        "count":     count,
+        "freshness": "pd",   # past day — 24 hours only
+        "safesearch":"off",
+    })
+    url = f"https://api.search.brave.com/res/v1/news/search?{params}"
+    req = urllib.request.Request(url, headers={
+        "Accept":               "application/json",
+        "Accept-Encoding":      "gzip",
+        "X-Subscription-Token": BRAVE_API_KEY,
+    })
     try:
-        return client.messages.create(**kwargs)
-    except anthropic.RateLimitError:
-        if attempt < 3:
-            wait = (2 ** attempt) * 20
-            print(f"Rate limited. Waiting {wait}s (retry {attempt+1}/3)...")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+            results = data.get("results", [])
+            return [
+                {
+                    "title":       r.get("title", ""),
+                    "description": r.get("description", ""),
+                    "url":         r.get("url", ""),
+                    "age":         r.get("age", ""),
+                    "source":      r.get("meta_url", {}).get("hostname", ""),
+                }
+                for r in results
+            ]
+    except Exception as e:
+        print(f"  Brave search failed for '{query}': {e}")
+        return []
+
+
+def brave_web(query, count=3):
+    """Call Brave Web Search API for price verification."""
+    params = urllib.parse.urlencode({
+        "q":         query,
+        "count":     count,
+        "freshness": "pd",
+        "safesearch":"off",
+    })
+    url = f"https://api.search.brave.com/res/v1/web/search?{params}"
+    req = urllib.request.Request(url, headers={
+        "Accept":               "application/json",
+        "Accept-Encoding":      "gzip",
+        "X-Subscription-Token": BRAVE_API_KEY,
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+            results = data.get("web", {}).get("results", [])
+            return [
+                {
+                    "title":       r.get("title", ""),
+                    "description": r.get("description", ""),
+                    "url":         r.get("url", ""),
+                    "age":         r.get("age", ""),
+                    "source":      r.get("meta_url", {}).get("hostname", ""),
+                }
+                for r in results
+            ]
+    except Exception as e:
+        print(f"  Brave web search failed for '{query}': {e}")
+        return []
+
+
+def format_results(results, label):
+    """Format search results as readable text for Claude."""
+    if not results:
+        return f"[{label}: no results found in past 24h]\n"
+    lines = [f"[{label}]"]
+    for r in results:
+        lines.append(f"- {r['title']}")
+        if r['description']:
+            lines.append(f"  {r['description'][:200]}")
+        if r['source']:
+            lines.append(f"  Source: {r['source']}  Age: {r['age']}")
+    return "\n".join(lines) + "\n"
+
+
+# ── CLAUDE API ────────────────────────────────────────────────────────────────
+def claude_haiku(system, user_message, attempt=0):
+    """Call Claude Haiku — no web search, pure text generation."""
+    body = json.dumps({
+        "model":      "claude-haiku-4-5-20251001",
+        "max_tokens": 1500,
+        "system":     system,
+        "messages":   [{"role": "user", "content": user_message}],
+    }).encode()
+
+    req = urllib.request.Request(
+        "https://api.anthropic.com/v1/messages",
+        data=body,
+        headers={
+            "x-api-key":        ANTHROPIC_API_KEY,
+            "anthropic-version":"2023-06-01",
+            "content-type":     "application/json",
+        }
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read())
+            return "\n".join(
+                b["text"] for b in data.get("content", []) if b.get("type") == "text"
+            ).strip()
+    except urllib.error.HTTPError as e:
+        body_text = e.read().decode("utf-8", errors="replace")
+        print(f"  Claude HTTP {e.code}: {body_text}")
+        if e.code == 429 and attempt < 3:
+            wait = (2 ** attempt) * 15
+            print(f"  Rate limited. Waiting {wait}s...")
             time.sleep(wait)
-            return call_api(model, system, messages, use_web_search, attempt + 1)
+            return claude_haiku(system, user_message, attempt + 1)
         raise
-    except anthropic.APIStatusError as e:
-        print(f"API error {e.status_code}: {e.message}")
-        raise
-
-
-def extract_text(response):
-    return "\n".join(
-        b.text for b in response.content if b.type == "text"
-    ).strip()
 
 
 # ── STEP 1: RESEARCH ──────────────────────────────────────────────────────────
-# Sonnet + web search (required for web search tool)
-# Capped at 1000 tokens — bullet points only, no prose
-print("Step 1: Researching live market data...")
+print("Step 1: Searching live data via Brave...")
 
-research_system = (
-    "You are a commodity market data collector. "
-    "Search the web and return raw factual findings only. "
-    "No analysis. Bullet points only. "
-    "Every item must include a source name and publication date."
-)
+# 8 targeted searches — designed to capture everything Perplexity Computer found
+searches = [
+    ("LME cobalt price today USD tonne",                           "news", 5),
+    ("LME copper price today USD tonne",                           "news", 5),
+    ("DRC Congo cobalt export quota supply policy",                "news", 5),
+    ("cobalt copper Western buyer supplier deal offtake MOU",      "news", 5),
+    ("Lobito corridor cobalt copper Angola railway",               "news", 4),
+    ("critical minerals supply chain US EU UK policy",             "news", 4),
+    ("Glencore CMOC Umicore Trafigura Mercuria cobalt copper",     "news", 4),
+    ("cobalt copper LME price fastmarkets mining",                 "web",  3),
+]
 
-research_prompt = (
-    "Today is " + today + ". Search for and return raw data on these topics:\n\n"
-    "1. LME cobalt cash price today (USD/t) with source and date\n"
-    "2. LME copper 3-month price today (USD/t) with source and date\n"
-    "3. Any DRC cobalt export quota or supply policy news from the last 48 hours\n"
-    "4. Any Western buyer-supplier deals, MOUs, or offtake agreements "
-    "in cobalt or copper from last 48 hours\n"
-    "5. Any Lobito Corridor developments from last 48 hours\n"
-    "6. Any other significant cobalt or copper supply chain news from last 48 hours\n\n"
-    "Format: plain bullet points. Source and date required for every item. "
-    "Discard anything older than 48 hours."
-)
+all_research = []
+total_queries = 0
 
-messages = [{"role": "user", "content": research_prompt}]
-data = call_api("claude-sonnet-4-6", research_system, messages, use_web_search=True)
+for query, search_type, count in searches:
+    print(f"  [{search_type}] {query}")
+    if search_type == "news":
+        results = brave_news(query, count)
+    else:
+        results = brave_web(query, count)
+    label = query[:50]
+    all_research.append(format_results(results, label))
+    total_queries += 1
+    time.sleep(0.3)  # polite delay, well within 50 req/s limit
 
-# Agentic loop for web search turns
-turn = 0
-while data.stop_reason == "tool_use" and turn < 6:
-    turn += 1
-    print(f"  Search turn {turn}...")
-    time.sleep(5)
-
-    # Append assistant response
-    assistant_content = [b.model_dump() for b in data.content]
-    messages.append({"role": "assistant", "content": assistant_content})
-
-    # Build tool results
-    tool_results = [
-        {"type": "tool_result", "tool_use_id": b.id, "content": "completed"}
-        for b in data.content if b.type == "tool_use"
-    ]
-    messages.append({"role": "user", "content": tool_results})
-    data = call_api("claude-sonnet-4-6", research_system, messages, use_web_search=True)
-
-research = extract_text(data)
-print(f"  Research done. {len(research)} characters.")
-if research:
-    print(f"  Sample: {research[:300]}")
-
-if len(research) < 50:
-    research = (
-        "No research data retrieved for " + today + ". "
-        "Check web search is enabled at console.anthropic.com"
-    )
+research_text = "\n".join(all_research)
+print(f"  Done. {total_queries} queries, {len(research_text)} characters of research.")
+print(f"  Sample:\n{research_text[:400]}\n...")
 
 
-# ── STEP 2: BRIEF WRITING ─────────────────────────────────────────────────────
-# Haiku — no web search, pure formatting task
-print("\nStep 2: Writing brief...")
-time.sleep(10)
+# ── STEP 2: WRITE BRIEF ───────────────────────────────────────────────────────
+print("\nStep 2: Writing brief with Claude Haiku...")
 
-brief_system = (
-    "You are the editorial writer for Lobito Intelligence Group. "
-    "Write the daily intelligence brief using only the research provided. "
-    "Do not add any information not present in the research. "
-    "Do not invent prices, companies, or events. "
-    "Write in intelligent editorial prose — specific, never generic. "
-    "The Broker's Lens must contain a non-obvious actionable insight "
-    "derived from today's specific findings."
-)
+brief_system = """You are the editorial writer for Lobito Intelligence Group, a critical minerals intelligence publisher focused on cobalt and copper supply chains.
 
-brief_prompt = (
-    "Write today's Critical Minerals Intelligence Brief from the research below.\n"
-    "Use only what is in the research. If a section has nothing relevant, "
-    "write one sentence noting no significant developments.\n\n"
-    "TODAY: " + today + "\n\n"
-    "RESEARCH:\n" + research + "\n\n"
-    "FORMAT - use exactly this structure:\n\n"
-    "Lobito Intelligence Group\n"
-    "Critical Minerals Intelligence\n"
-    + today + " - Daily Brief\n\n"
-    "PRICE SNAPSHOT\n"
-    "Cobalt: [exact price and source from research] - [one sentence context]\n"
-    "Copper: [exact price and source from research] - [one sentence context]\n\n"
-    "SUPPLY CHAIN SIGNALS\n"
-    "[2-3 paragraphs. Named companies, specific volumes, "
-    "specific dates from research only.]\n\n"
-    "GEOPOLITICAL RISK\n"
-    "[1-2 paragraphs. Named actors, specific policies, "
-    "specific timelines from research only.]\n\n"
-    "DEMAND DRIVERS\n"
-    "[1 paragraph. Named companies and programmes from research only.]\n\n"
-    "BROKER'S LENS\n"
-    "[3-4 sentences. What should a Western procurement director do differently "
-    "THIS WEEK based on today's research? Name specific actions and timeframes. "
-    "Never use 'it is worth noting' or 'the situation remains fluid'.]\n\n"
-    "-\n"
-    "Connecting Western buyers with responsible DRC and Copperbelt supply.\n"
-    "Published weekdays. Forward to a colleague in procurement, "
-    "supply chain, or commodities."
-)
+Write the daily brief using ONLY the search results provided. Every fact, price, company name, and development must come from the search results. Do not invent or assume anything not present in the results.
 
-brief_data = call_api(
-    "claude-haiku-4-5-20251001",
-    brief_system,
-    [{"role": "user", "content": brief_prompt}],
-    use_web_search=False
-)
+Write in intelligent editorial prose. Be specific — name companies, volumes, dates, and prices exactly as they appear in the results. The Broker's Lens must contain a non-obvious, actionable insight that a procurement director could act on today."""
 
-brief = extract_text(brief_data)
-print(f"  Brief done. {len(brief)} characters.")
+brief_prompt = f"""Today is {today}.
+
+Write the Critical Minerals Intelligence Brief from these search results:
+
+{research_text}
+
+Use this exact format — no deviations:
+
+Lobito Intelligence Group
+Critical Minerals Intelligence
+{today} - Daily Brief
+
+PRICE SNAPSHOT
+Cobalt: [price from results, source, date] - [one sentence on drivers]
+Copper: [price from results, source, date] - [one sentence on drivers]
+
+SUPPLY CHAIN SIGNALS
+[2-3 paragraphs. Named companies, specific volumes, specific dates from results only. If a result mentions a deal, MOU, or supply agreement — include it here with full detail.]
+
+GEOPOLITICAL RISK
+[1-2 paragraphs. DRC policy, export controls, sanctions, logistics disruptions from results only. Named actors and specific timelines.]
+
+DEMAND DRIVERS
+[1 paragraph. EV, aerospace, defence, grid — named companies and programmes from results only.]
+
+BROKER'S LENS
+[3-4 sentences. Based strictly on today's results: what should a Western procurement director or junior miner do differently THIS WEEK? Name specific actions, counterparty types, and timeframes. Never use "it is worth noting" or "the situation remains fluid".]
+
+-
+Connecting Western buyers with responsible DRC and Copperbelt supply.
+Published weekdays. Forward to a colleague in procurement, supply chain, or commodities."""
+
+brief = claude_haiku(brief_system, brief_prompt)
+print(f"  Done. {len(brief)} characters.")
 
 if len(brief) < 100:
-    brief = "Brief generation failed on " + today + ".\n\nResearch collected:\n" + research
+    brief = f"Brief generation failed on {today}.\n\nRaw research:\n{research_text[:2000]}"
 
 
 # ── STEP 3: SEND EMAIL ────────────────────────────────────────────────────────
 print("\nStep 3: Sending email...")
 
 msg = MIMEText(brief, "plain", "utf-8")
-msg["Subject"] = "Brief ready - " + today_short
-msg["From"] = GMAIL_USER
-msg["To"] = GMAIL_USER
+msg["Subject"] = f"Brief ready - {today_short}"
+msg["From"]    = GMAIL_USER
+msg["To"]      = GMAIL_USER
 
 with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
     server.login(GMAIL_USER, GMAIL_PASS)
     server.send_message(msg)
 
-print("Done. Brief sent to " + GMAIL_USER)
+print(f"Done. Sent to {GMAIL_USER}")
+print(f"\nBrief preview:\n{brief[:500]}...")
