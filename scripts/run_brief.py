@@ -31,9 +31,12 @@ iso_date    = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
 def claude_call(model, system, user_message, tools=None, max_tokens=1500, attempt=0):
     messages = [{"role": "user", "content": user_message}]
     body_dict = {"model": model, "max_tokens": max_tokens, "system": system, "messages": messages}
+def claude_call(model, system, user_message, tools=None, max_tokens=1500, attempt=0):
+    messages = [{"role": "user", "content": user_message}]
+    body_dict = {"model": model, "max_tokens": max_tokens, "system": system, "messages": messages}
     if tools:
         body_dict["tools"] = tools
-    for _ in range(6):
+    for turn in range(3):  # hard cap at 3 tool rounds — prevents exponential context accumulation
         body = json.dumps(body_dict).encode()
         req = urllib.request.Request(
             "https://api.anthropic.com/v1/messages", data=body,
@@ -55,14 +58,28 @@ def claude_call(model, system, user_message, tools=None, max_tokens=1500, attemp
         if stop_reason == "end_turn" or not tools:
             return "\n".join(b["text"] for b in content if b.get("type") == "text").strip()
         if stop_reason == "tool_use":
-            tool_results = [{"type": "tool_result", "tool_use_id": b["id"], "content": b.get("content", "")}
-                            for b in content if b.get("type") == "tool_use"]
+            tool_results = []
+            for b in content:
+                if b.get("type") == "tool_use":
+                    # Truncate each search result to 2,000 chars to prevent context explosion
+                    raw_content = b.get("content", "")
+                    if isinstance(raw_content, str) and len(raw_content) > 2000:
+                        raw_content = raw_content[:2000] + "\n[truncated]"
+                    elif isinstance(raw_content, list):
+                        # content may be a list of blocks
+                        raw_content = str(raw_content)[:2000] + "\n[truncated]"
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": b["id"],
+                        "content": raw_content,
+                    })
             body_dict["messages"] = body_dict["messages"] + [
                 {"role": "assistant", "content": content},
-                {"role": "user", "content": tool_results}]
+                {"role": "user",      "content": tool_results}]
             continue
         return "\n".join(b["text"] for b in content if b.get("type") == "text").strip()
-    return ""
+    # If we hit the turn cap, return whatever text we have
+    return "\n".join(b["text"] for b in content if b.get("type") == "text").strip()
 
 def claude_haiku(system, user_message, max_tokens=1500):
     return claude_call("claude-haiku-4-5-20251001", system, user_message, None, max_tokens)
@@ -104,20 +121,23 @@ def fmt(results, label):
     return "\n".join(lines) + "\n"
 
 # ── STEP 1a: LIVE PRICES ──────────────────────────────────────────────────────
-print("Step 1a: Fetching live prices via Claude web_search...")
+# Uses Haiku + web_search (NOT Sonnet — Haiku is 10x cheaper and equally capable
+# for fetching two numbers). Tool rounds capped at 3 in claude_call above.
+print("Step 1a: Fetching live prices via Claude Haiku web_search...")
 
 price_text = claude_call(
-    model="claude-sonnet-4-6",
-    system="You are a commodity price data retrieval agent. Return only the two price lines requested. Nothing else.",
+    model="claude-haiku-4-5-20251001",
+    system="You are a commodity price data retrieval agent. Your only job is to find two current prices and return them in the exact format specified. Nothing else.",
     user_message=f"""Today is {today}.
-Search for current cobalt price per tonne USD and current LME copper cash price per tonne USD.
-Sources to check: Fastmarkets, LME.com, Trading Economics, Kitco, Metal Bulletin.
-Return ONLY these two lines, nothing else:
+Search for the current cobalt price and current LME copper cash price in USD per tonne.
+Only use prices dated within the last 48 hours. If the most recent price you find is older than 48 hours, still report it but flag the date clearly.
+Sources: Fastmarkets, LME.com, Trading Economics, Kitco, Metal Bulletin.
+Return ONLY these two lines, no other text:
 COBALT: $[price]/t · [source] · [date]
 COPPER: $[price]/t · [source] · [date]
-If unavailable write UNAVAILABLE for that line.""",
+If genuinely unavailable write: COBALT: UNAVAILABLE""",
     tools=[{"type": "web_search_20250305", "name": "web_search"}],
-    max_tokens=250,
+    max_tokens=120,
 )
 print(f"  Prices: {price_text}")
 
@@ -179,9 +199,9 @@ Structure each paragraph as two layers:
   Layer 2 — structural implication: why this matters beyond the headline. What does it signal about the market, the counterparty, or the supply chain? What should a reader infer that isn't obvious?
 Never write a paragraph that is only Layer 1. Every signal needs its implication stated.
 
-GEOPOLITICAL RISK: 2 paragraphs. Same two-layer structure — event then implication. Name government agencies, specific policies, concrete enforcement timelines where available.
-
 DEMAND DRIVERS: 1-2 paragraphs. Named end-use sectors, specific companies, specific programmes. State what the demand development means for cobalt or copper availability specifically — not just that demand exists.
+
+GEOPOLITICAL RISK: 2 paragraphs. Same two-layer structure — event then implication. Name government agencies, specific policies, concrete enforcement timelines where available. Every paragraph must name a specific implication for cobalt or copper — not critical minerals in general.
 
 RULES:
 — No filler: "it is worth noting", "in conclusion", "the situation remains fluid", "amid ongoing"
@@ -209,13 +229,13 @@ Copper: [exact line from LIVE PRICES] — [one sentence: structural driver, not 
 SUPPLY CHAIN SIGNALS
 [3-4 paragraphs — each with event + structural implication]
 
-GEOPOLITICAL RISK
-[2 paragraphs — event + what it signals for Western buyers or suppliers]
-
 DEMAND DRIVERS
-[1-2 paragraphs — named companies and what the demand development means for cobalt/copper availability]"""
+[1-2 paragraphs — named companies and what the demand development means for cobalt/copper availability]
 
-sections_text = claude_haiku(SECTIONS_SYSTEM, sections_prompt, max_tokens=1800)
+GEOPOLITICAL RISK
+[2 paragraphs — event + specific implication for cobalt or copper, not critical minerals generally]"""
+
+sections_text = claude_haiku(SECTIONS_SYSTEM, sections_prompt, max_tokens=2200)
 print(f"  Done. {len(sections_text)} chars.")
 
 # ── STEP 2b: BROKER'S LENS ────────────────────────────────────────────────────
