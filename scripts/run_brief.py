@@ -49,7 +49,10 @@ def claude_call(model, system, user_message, tools=None, max_tokens=1500, attemp
             body_text = e.read().decode("utf-8", errors="replace")
             print(f"  Claude HTTP {e.code}: {body_text[:200]}")
             if e.code == 429 and attempt < 3:
-                wait = (2 ** attempt) * 15
+                # 429 = rate limit hit. Wait for the per-minute window to reset.
+                # Tier 1 limit is 50k input tokens/min — wait 65s to clear it fully.
+                wait = 65 if attempt == 0 else 90
+                print(f"  Rate limit hit — waiting {wait}s for window to reset...")
                 time.sleep(wait)
                 return claude_call(model, system, user_message, tools, max_tokens, attempt + 1)
             raise
@@ -213,11 +216,17 @@ RULES:
 — Write sections 1-4 only — stop before Broker's Lens
 — Minimum 600 words across the four sections"""
 
+# Hard cap on news_text to prevent input token rate limit (50k/min Tier 1)
+# 12,000 chars ≈ 3,000 tokens — leaves plenty of headroom with system prompt
+news_text_trimmed = news_text[:12000] if len(news_text) > 12000 else news_text
+if len(news_text) > 12000:
+    print(f"  News text trimmed: {len(news_text)} → 12,000 chars to stay within token limits")
+
 sections_prompt = f"""Today is {today}.
 === LIVE PRICES (use exactly as written) ===
 {price_text}
 === NEWS AND CONTEXT (past week) ===
-{news_text}
+{news_text_trimmed}
 Write sections 1-4. Be thorough — each signal deserves its implication stated, not just its headline.
 
 Lobito Intelligence Group
@@ -248,7 +257,7 @@ Write the Broker's Lens: given today's specific developments, what should a West
 Rules: 3-4 sentences. Non-obvious insight — not the headline, but the most actionable unpriced consequence. Name specific actions, counterparty types, timeframes. No filler. No recap. Facts only from research provided. Plain prose only — no heading, no markdown, no ** bold, no # symbols, no bullet points."""
 
 brokers_lens = claude_haiku(LENS_SYSTEM,
-    f"Today is {today}.\nSections written:\n{sections_text}\nFull research:\n{price_text}\n{news_text}\nWrite Broker's Lens — 3-4 sentences.",
+    f"Today is {today}.\nSections written:\n{sections_text}\nFull research:\n{price_text}\n{news_text_trimmed}\nWrite Broker's Lens — 3-4 sentences.",
     max_tokens=350)
 print(f"  Done. {len(brokers_lens)} chars.")
 
