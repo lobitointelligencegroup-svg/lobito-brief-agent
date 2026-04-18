@@ -127,17 +127,18 @@ print("Step 1a: Fetching live prices via Claude Haiku web_search...")
 
 price_text = claude_call(
     model="claude-haiku-4-5-20251001",
-    system="You are a commodity price data retrieval agent. Your only job is to find two current prices and return them in the exact format specified. Nothing else.",
-    user_message=f"""Today is {today}.
-Search for the current cobalt price and current LME copper cash price in USD per tonne.
-Only use prices dated within the last 48 hours. If the most recent price you find is older than 48 hours, still report it but flag the date clearly.
-Sources: Fastmarkets, LME.com, Trading Economics, Kitco, Metal Bulletin.
-Return ONLY these two lines, no other text:
-COBALT: $[price]/t · [source] · [date]
-COPPER: $[price]/t · [source] · [date]
-If genuinely unavailable write: COBALT: UNAVAILABLE""",
-    tools=[{"type": "web_search_20250305", "name": "web_search"}],
-    max_tokens=120,
+    system="""You are a price retrieval agent. You must output EXACTLY two lines and nothing else.
+Do not write any introduction, explanation, or commentary before or after the two lines.
+Do not write "Let me search" or "I found" or any other text.
+Output format is non-negotiable. Two lines only. Start your response with COBALT:""",
+    user_message=f"""Today is {today}. Search for cobalt price USD/t and LME copper cash price USD/t.
+Use Trading Economics, Kitco, or LME.com. If a price is older than 48 hours, still use it and state the date.
+Output EXACTLY these two lines and nothing else — start immediately with COBALT:
+
+COBALT: $[number]/t · [source] · [date]
+COPPER: $[number]/t · [source] · [date]""",
+    tools=[{{"type": "web_search_20250305", "name": "web_search"}}],
+    max_tokens=300,
 )
 print(f"  Prices: {price_text}")
 
@@ -207,7 +208,8 @@ RULES:
 — No filler: "it is worth noting", "in conclusion", "the situation remains fluid", "amid ongoing"
 — Name every company and country — never "a major miner" or "a Western buyer"
 — Cite source and approximate date for every factual claim
-— No markdown, no ## headers, no bullet points
+— ABSOLUTELY NO MARKDOWN: no # or ## headers, no ** bold, no * italic, no bullet points, no dashes as list items, no --- dividers
+— Section headings are plain uppercase text on their own line: PRICE SNAPSHOT, SUPPLY CHAIN SIGNALS, etc.
 — Write sections 1-4 only — stop before Broker's Lens
 — Minimum 600 words across the four sections"""
 
@@ -243,7 +245,7 @@ print("\nStep 2b: Writing Broker's Lens...")
 
 LENS_SYSTEM = """You are a senior physical commodity broker with 20 years in cobalt and copper.
 Write the Broker's Lens: given today's specific developments, what should a Western procurement director or junior miner do DIFFERENTLY this week that they would NOT have done last week?
-Rules: 3-4 sentences. Non-obvious insight — not the headline, but the most actionable unpriced consequence. Name specific actions, counterparty types, timeframes. No filler. No recap. Facts only from research provided. Paragraph text only — no heading."""
+Rules: 3-4 sentences. Non-obvious insight — not the headline, but the most actionable unpriced consequence. Name specific actions, counterparty types, timeframes. No filler. No recap. Facts only from research provided. Plain prose only — no heading, no markdown, no ** bold, no # symbols, no bullet points."""
 
 brokers_lens = claude_haiku(LENS_SYSTEM,
     f"Today is {today}.\nSections written:\n{sections_text}\nFull research:\n{price_text}\n{news_text}\nWrite Broker's Lens — 3-4 sentences.",
