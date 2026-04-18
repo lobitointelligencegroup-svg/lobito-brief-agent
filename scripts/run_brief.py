@@ -109,20 +109,30 @@ WEB_SEARCH = [{"type": "web_search_20250305", "name": "web_search"}]
 # Three-layer fallback: structured parse → number extraction → hardcoded recent.
 print("Step 1a: Fetching prices from Trading Economics...")
 
-PRICE_SYSTEM = """You are a commodity price agent. Search for the current cobalt and copper prices.
-Return ONLY the two price lines shown below. Start your very first character with COBALT:
-Do not write any introduction, explanation, or commentary."""
+PRICE_SYSTEM = """You are a commodity price agent. Your only job is to find two numbers and return them.
+Return ONLY the two formatted lines. Your response must begin with the letter C. No other text."""
 
 PRICE_PROMPT = f"""Today is {today}.
 
-Search for:
-1. "cobalt price USD per tonne tradingeconomics" — find the number on tradingeconomics.com/commodity/cobalt
-2. "copper price USD per tonne tradingeconomics" — find the number on tradingeconomics.com/commodity/copper
+Find the current cobalt price and copper price from Trading Economics.
 
-Trading Economics shows prices 24/7. If markets are closed today, return Friday's closing price — that IS the current price.
-Always return a specific number in USD per tonne. Never say unavailable.
+For COBALT:
+- Search: cobalt price per tonne site:tradingeconomics.com
+- Also try: "cobalt" tradingeconomics.com industrial metals
+- Note: cobalt is listed under Commodities > Industrial Metals on Trading Economics
+- The page is tradingeconomics.com/commodity/cobalt
+- Find the USD per tonne number shown on that page
 
-Return ONLY these two lines, first character must be C:
+For COPPER:
+- Search: copper price per tonne tradingeconomics.com
+- The page is tradingeconomics.com/commodity/copper
+- Find the USD per tonne number
+
+Trading Economics shows the last settlement price 24/7 — weekends show Friday's close, which IS the current price.
+If you find a price in USD per pound, multiply by 2204.62 to convert to USD per tonne.
+Always return a specific number. Do not write "unavailable" or "N/A".
+
+Your entire response must be exactly these two lines, nothing else:
 COBALT: $[number]/t - Trading Economics - {today_short}
 COPPER: $[number]/t - Trading Economics - {today_short}"""
 
@@ -258,7 +268,7 @@ PRICE SNAPSHOT: Use the exact COBALT and COPPER lines from the PRICES section. D
 SUPPLY CHAIN SIGNALS: 3-4 paragraphs. Each covers a distinct development from the news.
 ONLY include developments directly related to cobalt, copper, DRC mining, Copperbelt logistics, or named cobalt/copper companies.
 Do NOT include rare earth stories, gallium stories, or general Africa business news unless they directly affect cobalt or copper.
-Lead with DRC and Copperbelt stories. Put geographically peripheral stories last.
+Order paragraphs by consequence to the reader, not by date. The story that most directly affects cobalt or copper availability or pricing for Western buyers should always be paragraph one. Energy infrastructure and peripheral stories go last.
 Each paragraph has two layers:
   Layer 1 — what happened: named companies, specific volumes, specific dates.
   Layer 2 — structural implication: what this signals for the market that is not obvious from the headline.
@@ -291,7 +301,7 @@ Cobalt: [exact COBALT line from research] — [one sentence: structural driver]
 Copper: [exact COPPER line from research] — [one sentence: structural driver]
 
 SUPPLY CHAIN SIGNALS
-[3-4 paragraphs — most recent first, each with event + structural implication]
+[3-4 paragraphs — ordered by consequence to Western buyers, NOT by date. DRC supply control or availability stories first. Each paragraph: event + structural implication.]
 
 DEMAND DRIVERS
 [1-2 paragraphs — named companies, specific programmes]
@@ -317,7 +327,7 @@ Rules:
 — Non-obvious insight: not the most prominent headline, but the development with the most actionable unpriced consequence.
 — Name specific actions (e.g. "call your Trafigura desk"), specific counterparty types, and specific timeframes (days, not "soon").
 — No filler. No recap of what the sections already said. New perspective only.
-— Plain prose only. No markdown, no **, no #, no bullet points. No heading."""
+— Plain prose only. No markdown, no ** bold, no # headers, no bullet points, no dashes as list items. No heading, no label, no preamble."""
 
 brokers_lens = claude_haiku(
     LENS_SYSTEM,
