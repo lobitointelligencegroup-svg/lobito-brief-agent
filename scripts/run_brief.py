@@ -103,27 +103,26 @@ def claude_haiku(system, user_message, max_tokens=1500):
 WEB_SEARCH = [{"type": "web_search_20250305", "name": "web_search"}]
 
 
-# ── STEP 1a: PRICES — dedicated fetch from Trading Economics ──────────────────
-# Fetches tradingeconomics.com directly. Works 24/7 including weekends.
-# LME closes on weekends but Trading Economics shows the last settlement price —
-# that IS the current price. We always want a number, never "unavailable".
+# ── STEP 1a: PRICES — search Trading Economics for current cobalt & copper ────
+# Uses web_search to find current prices from Trading Economics.
+# Trading Economics updates 24/7 — weekend = Friday close, which IS the price.
+# Three-layer fallback: structured parse → number extraction → hardcoded recent.
 print("Step 1a: Fetching prices from Trading Economics...")
 
-PRICE_SYSTEM = """You are a price data agent. Fetch the exact pages specified and extract the price numbers.
-Do not search — fetch the exact URLs given. Return ONLY the two price lines. Nothing else.
-Start your response with COBALT: on the very first character."""
+PRICE_SYSTEM = """You are a commodity price agent. Search for the current cobalt and copper prices.
+Return ONLY the two price lines shown below. Start your very first character with COBALT:
+Do not write any introduction, explanation, or commentary."""
 
 PRICE_PROMPT = f"""Today is {today}.
 
-Fetch these two pages and extract the current price shown:
-1. https://tradingeconomics.com/commodity/cobalt  — find the cobalt price in USD per tonne
-2. https://tradingeconomics.com/commodity/copper  — find the copper price in USD per tonne
+Search for:
+1. "cobalt price USD per tonne tradingeconomics" — find the number on tradingeconomics.com/commodity/cobalt
+2. "copper price USD per tonne tradingeconomics" — find the number on tradingeconomics.com/commodity/copper
 
-Both pages show the current or last settlement price regardless of whether markets are open.
-If today is a weekend, use Friday's close — that IS the current price.
-Always return a number. Never return UNAVAILABLE.
+Trading Economics shows prices 24/7. If markets are closed today, return Friday's closing price — that IS the current price.
+Always return a specific number in USD per tonne. Never say unavailable.
 
-Return ONLY these two lines, starting immediately with COBALT::
+Return ONLY these two lines, first character must be C:
 COBALT: $[number]/t - Trading Economics - {today_short}
 COPPER: $[number]/t - Trading Economics - {today_short}"""
 
@@ -132,7 +131,7 @@ price_raw = claude_call(
     system=PRICE_SYSTEM,
     user_message=PRICE_PROMPT,
     tools=WEB_SEARCH,
-    max_tokens=120,
+    max_tokens=150,
 )
 print(f"  Raw prices: {price_raw[:200]}")
 
@@ -147,8 +146,14 @@ def extract_price_number(text, metal):
     # Cobalt: 40,000-80,000 range. Copper: 8,000-16,000 range
     ranges = {"cobalt": (30000, 90000), "copper": (7000, 16000)}
     lo, hi = ranges.get(metal.lower(), (1000, 100000))
-    for m in re.finditer(r'[\$]?([\d,]+(?:\.\d+)?)', text):
-        val = float(m.group(1).replace(",", ""))
+    for m in re.finditer(r'\$?(\d[\d,]*(?:\.\d+)?)', text):
+        raw_num = m.group(1).replace(",", "")
+        if not raw_num:
+            continue
+        try:
+            val = float(raw_num)
+        except ValueError:
+            continue
         if lo <= val <= hi:
             return int(val)
     # Try $/lb for copper and convert
