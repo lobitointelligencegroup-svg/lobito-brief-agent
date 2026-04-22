@@ -1,0 +1,36 @@
+name: Price Refresh
+
+on:
+  schedule:
+    - cron: '0 7 * * 1-5'    # 8am BST
+    - cron: '0 10 * * 1-5'   # 11am BST
+    - cron: '0 13 * * 1-5'   # 2pm BST
+    - cron: '30 15 * * 1-5'  # 4:30pm BST
+  workflow_dispatch:
+
+jobs:
+  refresh-prices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout data branch
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Refresh prices in data.json
+        run: python3 scripts/price_refresh.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Commit updated prices to data branch
+        run: |
+          git config user.name  "Lobito Price Bot"
+          git config user.email "actions@github.com"
+          git add data.json
+          git diff --staged --quiet || git commit -m "Price refresh: $(date -u '+%H:%M UTC')"
+          git push origin data

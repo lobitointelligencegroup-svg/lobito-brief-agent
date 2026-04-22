@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lobito Intelligence — Critical Minerals Edge</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── DESIGN TOKENS ────────────────────────────────────────────────────────── */
+:root {
+  /* backgrounds */
+  --bg:   #08080c;
+  --s1:   #0f0f14;
+  --s2:   #16161c;
+  --s3:   #1e1e26;
+  --s4:   #28282f;
+
+  /* borders */
+  --bdr:  rgba(255,255,255,0.07);
+  --bdr2: rgba(255,255,255,0.13);
+  --bdr3: rgba(255,255,255,0.20);
+
+  /* text — all pass WCAG AA on --bg */
+  --txt:  #f0ece0;    /* primary    — near white warm */
+  --txt2: #b8b2a6;    /* secondary  — readable mid-grey */
+  --txt3: #7a7670;    /* tertiary   — labels, meta */
+  --txt4: #504c48;    /* quaternary — truly secondary */
+
+  /* brand */
+  --gold:   #d4a84e;
+  --goldd:  rgba(212,168,78,0.10);
+  --goldb:  rgba(212,168,78,0.28);
+
+  /* status */
+  --green:  #42b072;
+  --greend: rgba(66,176,114,0.12);
+  --greenb: rgba(66,176,114,0.28);
+  --red:    #d45050;
+  --redd:   rgba(212,80,80,0.12);
+  --redb:   rgba(212,80,80,0.28);
+  --amber:  #d4843c;
+  --amberd: rgba(212,132,60,0.12);
+  --amberb: rgba(212,132,60,0.28);
+  --blue:   #4a88d4;
+  --blued:  rgba(74,136,212,0.12);
+  --blueb:  rgba(74,136,212,0.28);
+
+  /* type */
+  --mono:  'JetBrains Mono', monospace;
+  --sans:  'Instrument Sans', sans-serif;
+  --serif: 'Fraunces', serif;
+}
+
+/* ── RESET ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--txt); font-family: var(--sans);
+       min-height: 100vh; overflow-x: hidden; line-height: 1.6; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--s4); border-radius: 2px; }
+
+/* ── TYPE SCALE (nothing below 11px) ──────────────────────────────────────── */
+.t-xs   { font-size: 11px; }
+.t-sm   { font-size: 12px; }
+.t-base { font-size: 14px; }
+.t-md   { font-size: 16px; }
+.t-lg   { font-size: 20px; }
+.t-xl   { font-size: 28px; }
+.t-hero { font-size: 44px; }
+.mono   { font-family: var(--mono); }
+.serif  { font-family: var(--serif); }
+.muted  { color: var(--txt2); }
+.dim    { color: var(--txt3); }
+
+/* ── TOPBAR ────────────────────────────────────────────────────────────────── */
+.topbar {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(8,8,12,0.95); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--bdr);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2rem; height: 56px; gap: 1rem;
+}
+.logo { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.logo-mark {
+  width: 34px; height: 34px; border: 1px solid var(--goldb); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--goldd);
+  font-family: var(--serif); font-size: 16px; color: var(--gold); font-style: italic;
+}
+.logo-text  { font-family: var(--serif); font-size: 17px; color: var(--txt); font-weight: 400; }
+.logo-sub   { font-family: var(--mono); font-size: 11px; color: var(--txt3); letter-spacing: .08em; text-transform: uppercase; margin-top: 1px; }
+.topbar-nav { display: flex; gap: 2px; align-items: center; flex: 1; justify-content: center; }
+.nav-pill {
+  font-family: var(--mono); font-size: 11px; color: var(--txt3);
+  text-transform: uppercase; letter-spacing: .06em;
+  padding: 6px 14px; border-radius: 4px;
+  cursor: pointer; border: none; background: none;
+  transition: all .15s; white-space: nowrap;
+}
+.nav-pill:hover  { color: var(--txt2); background: var(--s2); }
+.nav-pill.active { color: var(--gold); background: var(--goldd); border: 1px solid var(--goldb); }
+.topbar-right { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.live-ind { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--green); }
+.pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.clock { font-family: var(--mono); font-size: 11px; color: var(--txt3); }
+.pro-pill {
+  font-family: var(--mono); font-size: 11px;
+  padding: 6px 16px; border: 1px solid var(--goldb); border-radius: 4px;
+  background: var(--goldd); color: var(--gold); cursor: pointer;
+  letter-spacing: .06em; text-transform: uppercase; transition: all .15s;
+}
+.pro-pill:hover { background: rgba(212,168,78,.16); }
+
+/* ── PAGES + GRID ──────────────────────────────────────────────────────────── */
+.page { display: none; } .page.active { display: block; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 320px;
+  gap: 1px; background: var(--bdr); border: 1px solid var(--bdr);
+}
+.full-w { grid-column: 1 / -1; }
+.span2  { grid-column: span 2; }
+.span3  { grid-column: span 3; }
+.cell   { background: var(--s1); padding: 1.5rem 1.75rem; }
+.cell-sm{ background: var(--s1); }
+
+/* card header */
+.ch {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.5rem; border-bottom: 1px solid var(--bdr);
+}
+.ct { font-family: var(--mono); font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: .10em; }
+.cm { font-family: var(--mono); font-size: 11px; color: var(--txt4); }
+
+/* ── PRICE HERO ────────────────────────────────────────────────────────────── */
+.ph  { background: var(--s1); padding: 1.75rem 2rem; }
+.phc { font-family: var(--mono); font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: .10em; margin-bottom: 1rem; }
+.phm { display: flex; align-items: flex-end; gap: 14px; margin-bottom: .75rem; }
+.php { font-family: var(--serif); font-size: 44px; font-weight: 300; color: var(--txt); letter-spacing: -.02em; line-height: 1; }
+.phu { font-family: var(--mono); font-size: 13px; color: var(--txt3); margin-bottom: 6px; }
+.phchg {
+  font-family: var(--mono); font-size: 12px;
+  padding: 3px 10px; border-radius: 3px;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.cup { background: var(--greend); color: var(--green); border: 1px solid var(--greenb); }
+.cdn { background: var(--redd);   color: var(--red);   border: 1px solid var(--redb);   }
+.cfl { background: var(--s3);     color: var(--txt3);  border: 1px solid var(--bdr2);   }
+.phmt { font-family: var(--mono); font-size: 12px; color: var(--txt3); margin-bottom: .875rem; }
+.phi  { font-size: 13px; color: var(--txt2); line-height: 1.7; border-top: 1px solid var(--bdr); padding-top: .875rem; }
+.phsg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: .875rem; }
+.phs  { background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px; padding: 10px 14px; }
+.phsl { font-family: var(--mono); font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px; }
+.phsv { font-family: var(--mono); font-size: 14px; color: var(--txt); font-weight: 400; }
+.phsn { font-family: var(--mono); font-size: 11px; color: var(--txt3); margin-top: 2px; }
+
+/* ── STATUS BOARD ──────────────────────────────────────────────────────────── */
+.stg { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--bdr); }
+.stc { background: var(--s1); padding: 1.25rem 1.5rem; }
+.stl { font-family: var(--mono); font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: .09em; margin-bottom: 8px; }
+.stb {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--mono); font-size: 11px;
+  padding: 3px 10px; border-radius: 3px; margin-bottom: 8px;
+}
+.stv { font-size: 14px; font-weight: 500; color: var(--txt); margin-bottom: 4px; }
+.stn { font-family: var(--mono); font-size: 12px; color: var(--txt2); line-height: 1.6; }
+
+/* badge colour variants */
+.bc  { background: var(--redd);   color: var(--red);   border: 1px solid var(--redb);   }
+.bh  { background: var(--amberd); color: var(--amber); border: 1px solid var(--amberb); }
+.bbl { background: var(--blued);  color: var(--blue);  border: 1px solid var(--blueb);  }
+.bg  { background: var(--greend); color: var(--green); border: 1px solid var(--greenb); }
+
+/* ── SIGNAL FEED ───────────────────────────────────────────────────────────── */
+.sig {
+  display: grid; grid-template-columns: auto 1fr auto;
+  gap: 14px; align-items: start;
+  padding: 1.125rem 1.5rem;
+  border-bottom: 1px solid var(--bdr);
+  cursor: pointer; transition: background .1s;
+}
+.sig:last-child { border-bottom: none; }
+.sig:hover { background: var(--s2); }
+.sp {
+  font-family: var(--mono); font-size: 11px;
+  padding: 3px 8px; border-radius: 3px;
+  text-transform: uppercase; letter-spacing: .05em;
+  white-space: nowrap; margin-top: 2px;
+}
+.pc  { background: var(--redd);   color: var(--red);   border: 1px solid var(--redb);   }
+.ph2 { background: var(--amberd); color: var(--amber); border: 1px solid var(--amberb); }
+.pw  { background: var(--blued);  color: var(--blue);  border: 1px solid var(--blueb);  }
+.pm  { background: var(--s3);     color: var(--txt3);  border: 1px solid var(--bdr2);   }
+.st   { font-size: 14px; font-weight: 500; color: var(--txt); margin-bottom: 5px; line-height: 1.4; }
+.sb2  { font-family: var(--mono); font-size: 12px; color: var(--txt2); line-height: 1.65; margin-bottom: 5px; }
+.sa   { font-family: var(--mono); font-size: 12px; color: var(--gold); margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+.sa::before { content: '→'; opacity: .7; }
+.ss   { font-family: var(--mono); font-size: 11px; color: var(--txt3); }
+.sage { font-family: var(--mono); font-size: 11px; color: var(--txt4); white-space: nowrap; }
+
+/* ── BRIEF ─────────────────────────────────────────────────────────────────── */
+.bw {
+  padding: 1.5rem 1.75rem;
+  font-size: 14px; line-height: 1.85; color: var(--txt2);
+  max-height: 560px; overflow-y: auto;
+}
+.bhead {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  color: var(--gold); text-transform: uppercase; letter-spacing: .11em;
+  margin: 1.25rem 0 .5rem;
+}
+.bhead:first-child { margin-top: 0; }
+.bpara  { margin-bottom: .875rem; }
+.bprice { font-family: var(--mono); font-size: 13px; color: var(--txt); margin-bottom: 5px; }
+.lens {
+  background: var(--goldd); border-left: 3px solid var(--goldb);
+  padding: 1rem 1.25rem; margin: .375rem 0;
+  font-size: 14px; line-height: 1.85; color: var(--txt);
+  border-radius: 0 4px 4px 0;
+}
+
+/* ── EMAIL GATE ────────────────────────────────────────────────────────────── */
+.gate {
+  background: var(--s2); border: 1px solid var(--goldb);
+  border-radius: 10px; margin: 1.5rem 1.75rem;
+  padding: 2rem; text-align: center;
+}
+.gate-title { font-family: var(--serif); font-size: 22px; color: var(--txt); margin-bottom: 8px; }
+.gate-sub   { font-size: 14px; color: var(--txt2); line-height: 1.7; margin-bottom: 1.5rem; max-width: 380px; margin-left: auto; margin-right: auto; }
+.gate-form  { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.gate-input {
+  background: var(--s3); border: 1px solid var(--bdr2); border-radius: 6px;
+  padding: 10px 16px; font-family: var(--mono); font-size: 13px; color: var(--txt);
+  outline: none; width: 240px; transition: border-color .15s;
+}
+.gate-input:focus { border-color: var(--goldb); }
+.gate-input::placeholder { color: var(--txt3); }
+.gate-btn {
+  padding: 10px 20px; background: var(--goldd); border: 1px solid var(--goldb);
+  border-radius: 6px; font-family: var(--mono); font-size: 12px; color: var(--gold);
+  cursor: pointer; letter-spacing: .06em; text-transform: uppercase; transition: all .15s;
+}
+.gate-btn:hover { background: rgba(212,168,78,.16); }
+.gate-note { font-family: var(--mono); font-size: 11px; color: var(--txt3); margin-top: 10px; }
+
+/* ── TABS ──────────────────────────────────────────────────────────────────── */
+.tabs { display: flex; border-bottom: 1px solid var(--bdr); background: var(--s1); }
+.tab {
+  font-family: var(--mono); font-size: 12px; color: var(--txt3);
+  text-transform: uppercase; letter-spacing: .07em;
+  padding: 12px 18px; cursor: pointer;
+  border: none; background: none;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: all .12s;
+}
+.tab.on { color: var(--gold); border-bottom-color: var(--gold); }
+.tab:hover:not(.on) { color: var(--txt2); }
+.tpane { display: none; } .tpane.on { display: block; }
+
+/* ── WHAT TO DO TODAY ──────────────────────────────────────────────────────── */
+.wtdi { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--bdr); }
+.wtdi:last-child { border-bottom: none; }
+.wtdw   { font-family: var(--mono); font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.wtda   { font-size: 15px; font-weight: 500; color: var(--txt); margin-bottom: 6px; line-height: 1.4; }
+.wtdy   { font-size: 13px; color: var(--txt2); line-height: 1.7; margin-bottom: 8px; }
+.wtdwin { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 12px; color: var(--gold); }
+.wtdwin::before { content: '⏱'; }
+
+/* ── COUNTERPARTY RADAR ────────────────────────────────────────────────────── */
+.cpi { padding: 1.125rem 1.5rem; border-bottom: 1px solid var(--bdr); }
+.cpi:last-child { border-bottom: none; }
+.cprow  { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.cpn    { font-size: 15px; font-weight: 500; color: var(--txt); }
+.cpr    { font-family: var(--mono); font-size: 11px; color: var(--txt3); margin-top: 2px; }
+.cps    { font-family: var(--mono); font-size: 11px; padding: 3px 8px; border-radius: 3px; }
+.cpnote { font-size: 13px; color: var(--txt2); line-height: 1.65; margin-bottom: 5px; }
+.cpsig  { font-family: var(--mono); font-size: 12px; color: var(--gold); }
+
+/* ── PRICE TABLE ───────────────────────────────────────────────────────────── */
+.ptbl { width: 100%; border-collapse: collapse; }
+.ptbl th {
+  font-family: var(--mono); font-size: 11px; color: var(--txt3);
+  text-transform: uppercase; letter-spacing: .08em;
+  padding: 8px 0; border-bottom: 1px solid var(--bdr);
+  text-align: left; font-weight: 400;
+}
+.ptbl td {
+  font-family: var(--mono); font-size: 13px; color: var(--txt2);
+  padding: 9px 0; border-bottom: 1px solid var(--bdr); vertical-align: top;
+}
+.ptbl td:first-child { color: var(--txt); }
+.ptbl tr:last-child td { border-bottom: none; }
+
+/* ── EDGE BARS ─────────────────────────────────────────────────────────────── */
+.ebr { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.ebl { font-family: var(--mono); font-size: 12px; color: var(--txt2); width: 160px; flex-shrink: 0; }
+.ebt { flex: 1; height: 4px; background: var(--s4); border-radius: 2px; overflow: hidden; }
+.ebf { height: 100%; border-radius: 2px; transition: width .6s ease; }
+.ebv { font-family: var(--mono); font-size: 12px; color: var(--txt3); width: 32px; text-align: right; flex-shrink: 0; }
+
+/* ── ROUTE STATUS ──────────────────────────────────────────────────────────── */
+.rt {
+  display: grid; grid-template-columns: auto 1fr auto;
+  gap: 12px; align-items: center;
+  padding: 1rem 1.5rem; border-bottom: 1px solid var(--bdr);
+}
+.rt:last-child { border-bottom: none; }
+.rtn    { font-size: 14px; font-weight: 500; color: var(--txt); }
+.rtnote { font-family: var(--mono); font-size: 12px; color: var(--txt2); line-height: 1.55; margin-top: 2px; }
+.rts    { font-family: var(--mono); font-size: 11px; padding: 3px 9px; border-radius: 3px; white-space: nowrap; }
+
+/* ── PRO CARD ──────────────────────────────────────────────────────────────── */
+.procard {
+  background: var(--s1); border: 1px solid var(--goldb);
+  padding: 1.75rem; position: relative; overflow: hidden;
+}
+.procard::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+.pct  { font-family: var(--serif); font-size: 22px; color: var(--txt); margin-bottom: .625rem; }
+.pcs  { font-size: 13px; color: var(--txt2); line-height: 1.75; margin-bottom: 1.125rem; }
+.pcf  { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+.pcd  { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); margin-top: 7px; flex-shrink: 0; }
+.pcft { font-size: 13px; color: var(--txt2); line-height: 1.6; }
+.pccta {
+  display: block; width: 100%; margin-top: 1.25rem; padding: 12px;
+  background: var(--goldd); border: 1px solid var(--goldb); border-radius: 6px;
+  font-family: var(--mono); font-size: 12px; color: var(--gold);
+  cursor: pointer; letter-spacing: .06em; text-transform: uppercase; transition: all .15s;
+}
+.pccta:hover { background: rgba(212,168,78,.16); }
+
+/* ── CALCULATOR ────────────────────────────────────────────────────────────── */
+.calc { padding: 1.5rem 1.75rem; }
+.cl { font-family: var(--mono); font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.ci, .csel {
+  width: 100%; background: var(--s2); border: 1px solid var(--bdr2);
+  border-radius: 6px; padding: 9px 12px;
+  font-family: var(--mono); font-size: 13px; color: var(--txt);
+  outline: none; transition: border-color .15s; margin-bottom: 10px;
+}
+.ci:focus, .csel:focus { border-color: var(--goldb); }
+.cgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+.cres {
+  background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px;
+  padding: 12px; font-family: var(--mono); font-size: 13px; color: var(--txt2);
+  min-height: 64px; line-height: 1.8;
+}
+.cres .big { font-size: 20px; color: var(--gold); }
+
+/* ── SUBSCRIBE BAR ─────────────────────────────────────────────────────────── */
+.subbar {
+  background: var(--s1);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.5rem 2rem; gap: 2rem; flex-wrap: wrap;
+}
+.sbt { font-family: var(--serif); font-size: 20px; color: var(--txt); margin-bottom: 4px; }
+.sbs { font-size: 13px; color: var(--txt2); }
+.sbform { display: flex; gap: 8px; }
+.sbinput {
+  background: var(--s3); border: 1px solid var(--bdr2); border-radius: 6px;
+  padding: 10px 16px; font-family: var(--mono); font-size: 13px; color: var(--txt);
+  outline: none; width: 240px; transition: border-color .15s;
+}
+.sbinput:focus { border-color: var(--goldb); }
+.sbinput::placeholder { color: var(--txt3); }
+.sbbtn {
+  padding: 10px 20px; background: var(--goldd); border: 1px solid var(--goldb);
+  border-radius: 6px; font-family: var(--mono); font-size: 12px; color: var(--gold);
+  cursor: pointer; letter-spacing: .06em; text-transform: uppercase;
+  white-space: nowrap; transition: all .15s;
+}
+.sbbtn:hover { background: rgba(212,168,78,.16); }
+
+/* ── FOOTER ────────────────────────────────────────────────────────────────── */
+.ft {
+  background: var(--s1); border-top: 1px solid var(--bdr);
+  padding: 1.25rem 2rem;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: .75rem;
+}
+.ftl    { font-family: var(--mono); font-size: 12px; color: var(--txt3); line-height: 1.8; }
+.ftlinks{ display: flex; gap: 20px; }
+.fta    { font-family: var(--mono); font-size: 12px; color: var(--txt3); text-decoration: none; text-transform: uppercase; letter-spacing: .06em; }
+.fta:hover { color: var(--txt2); }
+
+/* ── MARKET INTEL ──────────────────────────────────────────────────────────── */
+.intel-block { padding: 1.5rem 1.75rem; border-bottom: 1px solid var(--bdr); }
+.intel-block:last-child { border-bottom: none; }
+.intel-head { font-family: var(--mono); font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: .10em; margin-bottom: .625rem; }
+.intel-body { font-size: 14px; color: var(--txt2); line-height: 1.75; }
+.vtbl { width: 100%; border-collapse: collapse; margin-top: .625rem; }
+.vtbl th {
+  font-family: var(--mono); font-size: 11px; color: var(--txt3);
+  text-transform: uppercase; letter-spacing: .08em;
+  padding: 8px 0; border-bottom: 1px solid var(--bdr); font-weight: 400; text-align: left;
+}
+.vtbl td {
+  font-family: var(--mono); font-size: 12px; color: var(--txt2);
+  padding: 9px 0; border-bottom: 1px solid var(--bdr);
+  vertical-align: top; line-height: 1.65;
+}
+.vtbl td:first-child { color: var(--txt); width: 160px; }
+.vtbl tr:last-child td { border-bottom: none; }
+
+/* ── MODAL ─────────────────────────────────────────────────────────────────── */
+.overlay { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,.78); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
+.overlay.open { display: flex; }
+.modal {
+  background: var(--s1); border: 1px solid var(--goldb);
+  border-radius: 10px; padding: 2.25rem; max-width: 440px; width: 90%; position: relative;
+}
+.mclose { position: absolute; top: 14px; right: 18px; background: none; border: none; font-size: 18px; color: var(--txt3); cursor: pointer; }
+.mtitle { font-family: var(--serif); font-size: 24px; color: var(--txt); margin-bottom: 8px; }
+.msub   { font-size: 13px; color: var(--txt2); line-height: 1.75; margin-bottom: 1.25rem; }
+.minput {
+  width: 100%; background: var(--s2); border: 1px solid var(--bdr2); border-radius: 6px;
+  padding: 10px 14px; font-family: var(--mono); font-size: 13px; color: var(--txt);
+  outline: none; margin-bottom: 8px; transition: border-color .15s;
+}
+.minput:focus { border-color: var(--goldb); }
+.mbtn {
+  width: 100%; padding: 12px; background: var(--goldd); border: 1px solid var(--goldb);
+  border-radius: 6px; font-family: var(--mono); font-size: 12px; color: var(--gold);
+  cursor: pointer; letter-spacing: .06em; text-transform: uppercase; margin-top: 6px; transition: all .15s;
+}
+.mbtn:hover { background: rgba(212,168,78,.16); }
+.mfeat  { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+.mfdot  { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); margin-top: 7px; flex-shrink: 0; }
+.mft    { font-size: 13px; color: var(--txt2); line-height: 1.6; }
+.mnote  { font-size: 12px; color: var(--txt3); margin-top: 12px; line-height: 1.65; }
+
+/* ── OVERVIEW PAGE LAYOUT ──────────────────────────────────────────────────── */
+.ov-price-band{display:grid;grid-template-columns:1fr 1px 1fr;background:var(--s1);border-bottom:1px solid var(--bdr)}
+.ov-price-cell{padding:2.25rem 2.5rem}
+.ov-price-divider{background:var(--bdr);width:1px}
+.ov-price-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.125rem}
+.ov-commodity{font-family:var(--mono);font-size:12px;color:var(--txt3);text-transform:uppercase;letter-spacing:.11em}
+.ov-commodity-sub{color:var(--txt4);margin-left:6px}
+.ov-price-main{display:flex;align-items:flex-end;gap:12px;margin-bottom:.75rem}
+.ov-price-num{font-family:var(--serif);font-size:52px;font-weight:300;color:var(--txt);letter-spacing:-.02em;line-height:1}
+.ov-price-unit{font-family:var(--mono);font-size:14px;color:var(--txt3);margin-bottom:8px}
+.ov-price-meta{font-family:var(--mono);font-size:12px;color:var(--txt3);margin-bottom:1.25rem;min-height:18px}
+.ov-price-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.ov-stat{background:var(--s2);border:1px solid var(--bdr);border-radius:6px;padding:10px 14px}
+.ov-stat-l{font-family:var(--mono);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.ov-stat-v{font-family:var(--mono);font-size:15px;color:var(--txt);font-weight:400;margin-bottom:2px}
+.ov-stat-n{font-family:var(--mono);font-size:11px;color:var(--txt4)}
+.ov-price-insight{font-size:13px;color:var(--txt2);line-height:1.7;border-top:1px solid var(--bdr);padding-top:1rem}
+.ov-status-band{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--bdr);border-bottom:1px solid var(--bdr)}
+.ov-st-cell{background:var(--s1);padding:1.375rem 1.75rem}
+.ov-st-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ov-st-label{font-family:var(--mono);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.09em}
+.ov-st-val{font-size:15px;font-weight:500;color:var(--txt);margin-bottom:5px}
+.ov-st-note{font-family:var(--mono);font-size:12px;color:var(--txt2);line-height:1.6}
+.ov-body{display:grid;grid-template-columns:1fr 360px;gap:1px;background:var(--bdr);border-bottom:1px solid var(--bdr)}
+.ov-main{background:var(--s1)}
+.ov-section-head{display:flex;align-items:center;justify-content:space-between;padding:1.125rem 1.75rem;border-bottom:1px solid var(--bdr)}
+.ov-section-title{font-family:var(--mono);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.10em}
+.ov-section-meta{font-family:var(--mono);font-size:11px;color:var(--txt4)}
+.ov-signals-footer{padding:1rem 1.75rem;border-top:1px solid var(--bdr)}
+.ov-see-all{font-family:var(--mono);font-size:12px;color:var(--gold);background:none;border:none;cursor:pointer;letter-spacing:.04em;transition:opacity .12s}
+.ov-see-all:hover{opacity:.7}
+.ov-sidebar{background:var(--s2);display:flex;flex-direction:column;gap:1px}
+.ov-sub-card{background:var(--s1);padding:1.5rem 1.75rem;border-bottom:1px solid var(--bdr)}
+.ov-sub-title{font-family:var(--serif);font-size:18px;color:var(--txt);margin-bottom:4px}
+.ov-sub-desc{font-size:13px;color:var(--txt2);margin-bottom:1rem}
+.ov-sub-form{display:flex;flex-direction:column;gap:8px}
+.ov-sub-input{width:100%;background:var(--s2);border:1px solid var(--bdr2);border-radius:6px;padding:10px 14px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:border-color .15s}
+.ov-sub-input:focus{border-color:var(--goldb)}
+.ov-sub-input::placeholder{color:var(--txt3)}
+.ov-sub-btn{width:100%;padding:11px;background:var(--goldd);border:1px solid var(--goldb);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--gold);cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
+.ov-sub-btn:hover{background:rgba(212,168,78,.16)}
+.ov-pro-card{background:var(--s1);padding:1.5rem 1.75rem;position:relative;overflow:hidden;border-bottom:1px solid var(--bdr)}
+.ov-pro-accent{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent)}
+.ov-pro-title{font-family:var(--serif);font-size:18px;color:var(--txt);margin-bottom:5px}
+.ov-pro-desc{font-size:13px;color:var(--txt2);line-height:1.65;margin-bottom:1rem}
+.ov-pro-features{display:flex;flex-direction:column;gap:7px;margin-bottom:1.125rem}
+.ov-pro-feat{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--txt2)}
+.ov-pro-dot{width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.ov-pro-btn{width:100%;padding:11px;background:var(--goldd);border:1px solid var(--goldb);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--gold);cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .15s}
+.ov-pro-btn:hover{background:rgba(212,168,78,.16)}
+.ov-links-card{background:var(--s1);padding:1.25rem 1.75rem;flex:1}
+.ov-links-title{font-family:var(--mono);font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.10em;margin-bottom:12px}
+.ov-link-btn{display:block;width:100%;padding:10px 14px;margin-bottom:6px;background:var(--s2);border:1px solid var(--bdr);border-radius:6px;text-align:left;font-family:var(--mono);font-size:13px;color:var(--txt2);cursor:pointer;transition:all .12s}
+.ov-link-btn:hover{background:var(--s3);color:var(--txt);border-color:var(--bdr2)}
+.ov-link-btn:last-child{margin-bottom:0}
+@media(max-width:1400px){.ov-price-num{font-size:44px}.ov-price-stats{grid-template-columns:repeat(2,1fr)}.ov-body{grid-template-columns:1fr 320px}}
+@media(max-width:1100px){.ov-price-band{grid-template-columns:1fr}.ov-price-divider{display:none}.ov-status-band{grid-template-columns:repeat(2,1fr)}.ov-body{grid-template-columns:1fr}.ov-sidebar{flex-direction:row;flex-wrap:wrap}.ov-sub-card,.ov-pro-card,.ov-links-card{flex:1;min-width:260px}}
+@media(max-width:640px){.ov-status-band{grid-template-columns:1fr}.ov-price-cell{padding:1.5rem}.ov-price-num{font-size:36px}}
+
+/* ── LOADING / ERROR ───────────────────────────────────────────────────────── */
+.ld { font-family: var(--mono); font-size: 13px; color: var(--txt3); animation: fade 1.5s ease infinite; }
+@keyframes fade { 0%,100%{opacity:.2} 50%{opacity:.8} }
+
+/* ── RESPONSIVE ────────────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .grid { grid-template-columns: 1fr 1fr 320px; }
+  .span3 { grid-column: span 2; }
+}
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+  .span2, .span3 { grid-column: span 2; }
+  .full-w { grid-column: span 2; }
+}
+@media (max-width: 640px) {
+  html { font-size: 15px; }
+  .grid { grid-template-columns: 1fr; }
+  .span2, .span3, .full-w { grid-column: span 1; }
+  .topbar-nav { display: none; }
+  .topbar { padding: 0 1rem; }
+  .ph { padding: 1.25rem; }
+  .php { font-size: 36px; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-mark">L</div>
+    <div><div class="logo-text">Lobito Intelligence Group</div><div class="logo-sub">DRC &amp; Copperbelt · Cobalt &amp; Copper</div></div>
+  </div>
+  <nav class="topbar-nav">
+    <button class="nav-pill active" onclick="nav(this,'overview')">Overview</button>
+    <button class="nav-pill" onclick="nav(this,'signals')">Signals</button>
+    <button class="nav-pill" onclick="nav(this,'prices')">Price Intelligence</button>
+    <button class="nav-pill" onclick="nav(this,'action')">What to Do Today</button>
+    <button class="nav-pill" onclick="nav(this,'brief')">Daily Brief</button>
+    <button class="nav-pill" onclick="nav(this,'intel')">Market Intel</button>
+  </nav>
+  <div class="topbar-right">
+    <div class="live-ind"><span class="pulse"></span><span id="live-label">Loading</span></div>
+    <span class="clock" id="clk"></span>
+    <button class="pro-pill" onclick="openModal()">Pro Access</button>
+  </div>
+</header>
+
+<!-- OVERVIEW -->
+<div class="page active" id="pg-overview">
+
+  <!-- ROW 1: PRICE BAND — full width, side by side, dominant -->
+  <div class="ov-price-band">
+    <!-- COBALT -->
+    <div class="ov-price-cell">
+      <div class="ov-price-top">
+        <span class="ov-commodity">Cobalt <span class="ov-commodity-sub">LME indicative</span></span>
+        <span id="co-c"></span>
+      </div>
+      <div class="ov-price-main">
+        <span id="co-p" class="ov-price-num"><span class="ld">…</span></span>
+        <span class="ov-price-unit">USD/t</span>
+      </div>
+      <p class="ov-price-meta" id="co-m"></p>
+      <div class="ov-price-stats">
+        <div class="ov-stat"><div class="ov-stat-l">LME official</div><div class="ov-stat-v" id="co-lme">$56,290</div><div class="ov-stat-n">USD/t</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">Mysteel CNY</div><div class="ov-stat-v">¥408,818</div><div class="ov-stat-n">14 Apr</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">YoY change</div><div class="ov-stat-v" style="color:var(--green)">+161%</div><div class="ov-stat-n">vs Apr 2025</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">DRC supply share</div><div class="ov-stat-v">~73%</div><div class="ov-stat-n">global mined</div></div>
+      </div>
+      <p class="ov-price-insight">Feedstock tightness — not demand recovery — is the price support. DRC chemical disruption not yet priced into spot. Q2 squeeze window open now.</p>
+    </div>
+
+    <!-- DIVIDER -->
+    <div class="ov-price-divider"></div>
+
+    <!-- COPPER -->
+    <div class="ov-price-cell">
+      <div class="ov-price-top">
+        <span class="ov-commodity">Copper <span class="ov-commodity-sub">LME 3-month</span></span>
+        <span id="cu-c"></span>
+      </div>
+      <div class="ov-price-main">
+        <span id="cu-p" class="ov-price-num"><span class="ld">…</span></span>
+        <span class="ov-price-unit">USD/t</span>
+      </div>
+      <p class="ov-price-meta" id="cu-m"></p>
+      <div class="ov-price-stats">
+        <div class="ov-stat"><div class="ov-stat-l">Spot (Kitco)</div><div class="ov-stat-v" id="cu-sp">$13,141</div><div class="ov-stat-n">USD/t</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">COMEX HG</div><div class="ov-stat-v">$5.96/lb</div><div class="ov-stat-n">front month</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">YoY change</div><div class="ov-stat-v" style="color:var(--green)">+30%</div><div class="ov-stat-n">vs Apr 2025</div></div>
+        <div class="ov-stat"><div class="ov-stat-l">Lobito premium</div><div class="ov-stat-v" style="color:var(--amber)">+10–15%</div><div class="ov-stat-n">logistics surcharge</div></div>
+      </div>
+      <p class="ov-price-insight">Section 232 tariffs repricing downstream from 6 Apr. Structural 300–500kt deficit 2026. Physical premium building as Lobito stays shut.</p>
+    </div>
+  </div>
+
+  <!-- ROW 2: STATUS BOARD — 4 tiles, full width -->
+  <div class="ov-status-band">
+    <div class="ov-st-cell">
+      <div class="ov-st-top"><span class="ov-st-label">Lobito Corridor</span><span class="stb bc" id="st-lobito-badge">● SUSPENDED</span></div>
+      <p class="ov-st-val" id="st-lobito-val">Halted since 12 April</p>
+      <p class="ov-st-note" id="st-lobito-note">Flooding at Cubal &amp; Benguela. Rerouting via Durban/Dar. +10–15% logistics premium.</p>
+    </div>
+    <div class="ov-st-cell">
+      <div class="ov-st-top"><span class="ov-st-label">Chemical Supply</span><span class="stb bc" id="st-chem-badge">● DISRUPTED</span></div>
+      <p class="ov-st-val" id="st-chem-val">Leaching orders cancelled</p>
+      <p class="ov-st-note" id="st-chem-note">CMOC, Glencore withdrew orders. Iranian supply chain disruption. Output cuts possible within 7–10 days.</p>
+    </div>
+    <div class="ov-st-cell">
+      <div class="ov-st-top"><span class="ov-st-label">DRC Export Quota</span><span class="stb bh" id="st-quota-badge">⚑ ELEVATED RISK</span></div>
+      <p class="ov-st-val" id="st-quota-val">Strategic reserve active</p>
+      <p class="ov-st-note" id="st-quota-note">State can now stockpile unused quotas Apr 2026. Quota arbitrage likely Q3.</p>
+    </div>
+    <div class="ov-st-cell">
+      <div class="ov-st-top"><span class="ov-st-label">Western Policy</span><span class="stb bbl" id="st-policy-badge">↑ ACCELERATING</span></div>
+      <p class="ov-st-val" id="st-policy-val">EU–US pact Q2 expected</p>
+      <p class="ov-st-note" id="st-policy-note">REsourceEU launched 13 Apr. Section 232 copper tariffs live 6 Apr.</p>
+    </div>
+  </div>
+
+  <!-- ROW 3: MAIN CONTENT — signals (wide) + sidebar (narrow) -->
+  <div class="ov-body">
+
+    <!-- SIGNALS — main column -->
+    <div class="ov-main">
+      <div class="ov-section-head">
+        <span class="ov-section-title">Today's edge signals</span>
+        <span class="ov-section-meta" id="sig-date"></span>
+      </div>
+      <div id="top-signals">
+        <div style="padding:3rem;text-align:center"><span class="ld">Loading signals…</span></div>
+      </div>
+      <div class="ov-signals-footer">
+        <button class="ov-see-all" onclick="nav(document.querySelectorAll('.nav-pill')[1],'signals')">See all signals →</button>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="ov-sidebar">
+
+      <!-- SUBSCRIBE -->
+      <div class="ov-sub-card">
+        <p class="ov-sub-title">Get the brief at 6:30am</p>
+        <p class="ov-sub-desc">Prices, signals and Broker's Lens every weekday. Free.</p>
+        <script async src="https://subscribe-forms.beehiiv.com/embed.js"></script>
+        <iframe src="https://subscribe-forms.beehiiv.com/db020090-f413-45ca-99ed-d9526e5c763e" class="beehiiv-embed" frameborder="0" scrolling="no" style="width:100%;height:160px;margin:0;border-radius:6px;background:transparent;box-shadow:none;max-width:100%;border:none;"></iframe>
+      </div>
+
+      <!-- PRO ACCESS -->
+      <div class="ov-pro-card">
+        <div class="ov-pro-accent"></div>
+        <p class="ov-pro-title">Pro Access</p>
+        <p class="ov-pro-desc">Early deal flow, weekly market call, direct line to the broker. Free — we earn on completed introductions only.</p>
+        <div class="ov-pro-features">
+          <div class="ov-pro-feat"><span class="ov-pro-dot"></span>Early sight of deal opportunities</div>
+          <div class="ov-pro-feat"><span class="ov-pro-dot"></span>Weekly 30-min market call</div>
+          <div class="ov-pro-feat"><span class="ov-pro-dot"></span>Direct line — same-day response</div>
+          <div class="ov-pro-feat"><span class="ov-pro-dot"></span>Named in buyer/supplier network</div>
+        </div>
+        <button class="ov-pro-btn" onclick="openModal()">Request Pro Access →</button>
+      </div>
+
+      <!-- QUICK LINKS -->
+      <div class="ov-links-card">
+        <p class="ov-links-title">Jump to</p>
+        <button class="ov-link-btn" onclick="nav(document.querySelectorAll('.nav-pill')[2],'prices')">Price Intelligence →</button>
+        <button class="ov-link-btn" onclick="nav(document.querySelectorAll('.nav-pill')[3],'action')">What to Do Today →</button>
+        <button class="ov-link-btn" onclick="nav(document.querySelectorAll('.nav-pill')[4],'brief')">Daily Brief →</button>
+        <button class="ov-link-btn" onclick="nav(document.querySelectorAll('.nav-pill')[5],'intel')">Market Intel →</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ROW 4: FOOTER -->
+  <div class="ft" style="border-top:1px solid var(--bdr)">
+    <div class="ftl">Lobito Intelligence Group · lobitointelligencegroup@gmail.com · Connecting Western buyers with responsible DRC and Copperbelt supply</div>
+    <div class="ftlinks">
+      <a class="fta" href="mailto:lobitointelligencegroup@gmail.com">Contact</a>
+      <a class="fta" href="#" onclick="openModal()">Pro Access</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- SIGNALS -->
+<div class="page" id="pg-signals">
+<div class="grid">
+  <div class="cell-sm span3" style="padding:0"><div class="ch"><span class="ct">Edge Signal Feed</span><span class="cm" id="sig-date2"></span></div><div id="full-signals"><div style="padding:2rem;text-align:center"><span class="ld">Loading…</span></div></div></div>
+  <div class="cell-sm" style="padding:0"><div class="ch"><span class="ct">Counterparty radar</span></div>
+    <div class="cpi"><div class="cprow"><div><p class="cpn">Mercuria</p><p class="cpr">Trader · DRC State JV Partner</p></div><span class="cps bc">Active</span></div><p class="cpnote">Controls routing on 500,000t Gécamines copper. Preferred channel for DRC state supply. Managing allocation pressure from chemical disruption.</p><p class="cpsig">→ High receptivity to buyer enquiries this week</p></div>
+    <div class="cpi"><div class="cprow"><div><p class="cpn">Trafigura</p><p class="cpr">Trader · Copperbelt active</p></div><span class="cps bh">Watch</span></div><p class="cpnote">Active in Zambian copper. Lobito disruption increasing logistics costs. Optimising routing and offtake terms.</p><p class="cpsig">→ Call re: Zambia routing and Q3 cobalt allocation</p></div>
+    <div class="cpi"><div class="cprow"><div><p class="cpn">Glencore KCC</p><p class="cpr">Producer · Katanga DRC</p></div><span class="cps bh">Watch</span></div><p class="cpnote">Tax dispute settled. Chemical supply constrained. May be open to offtake conversations providing H2 certainty.</p><p class="cpsig">→ Monitor Q2 guidance for output constraint language</p></div>
+    <div class="cpi"><div class="cprow"><div><p class="cpn">Gécamines</p><p class="cpr">DRC State Miner</p></div><span class="cps bc">Strategic</span></div><p class="cpnote">Controlling reserve mechanism. US-facing via Mercuria JV. Not accessible without state intermediary.</p><p class="cpsig">→ Route via Mercuria or state-approved partners only</p></div>
+    <div class="cpi"><div class="cprow"><div><p class="cpn">CMOC / TFM</p><p class="cpr">Producer · Chinese-operated DRC</p></div><span class="cps pm">Monitor</span></div><p class="cpnote">Chemical supply disrupted. If output cuts materialise, distress spot selling likely within 10 days.</p><p class="cpsig">→ Monitor for distress spot availability in 10 days</p></div>
+  </div>
+</div></div>
+
+<!-- PRICE INTELLIGENCE -->
+<div class="page" id="pg-prices">
+<div class="grid">
+  <div class="cell span2" style="padding:0"><div class="ch"><span class="ct">Price structure — multiple benchmarks</span><span class="cm" id="price-updated"></span></div><div style="padding:1.25rem 1.5rem"><table class="ptbl"><tr><th>Benchmark</th><th>Price</th><th>Unit</th><th>Source</th><th>Signal</th></tr><tr><td>LME Cobalt official</td><td id="pt-co" style="color:var(--txt)">$56,290</td><td>USD/t</td><td>LME</td><td style="color:var(--txt3);font-size:11px">Flat. Feedstock support.</td></tr><tr><td>Mysteel electrolytic</td><td style="color:var(--txt)">¥408,818–411,136</td><td>CNY/t</td><td>Mysteel · 14 Apr</td><td style="color:var(--amber);font-size:11px">+¥3,409 on day</td></tr><tr><td>SMM refined cobalt</td><td style="color:var(--red)">At lows</td><td>spot</td><td>SMM · 16 Apr</td><td style="color:var(--txt3);font-size:11px">Recycling pressure on primary</td></tr><tr><td style="padding-top:12px;border-top:1px solid var(--bdr2)">LME Copper 3-month</td><td id="pt-cu" style="color:var(--green)">$13,141</td><td>USD/t</td><td>Kitco</td><td style="color:var(--green);font-size:11px">+30% YoY</td></tr><tr><td>COMEX HG front</td><td style="color:var(--green)">$5.96/lb</td><td>USD/lb</td><td>COMEX</td><td style="color:var(--txt3);font-size:11px">—</td></tr><tr><td>Lobito physical prem.</td><td style="color:var(--red)">+10–15%</td><td>surcharge</td><td>Market</td><td style="color:var(--red);font-size:11px">Corridor closed</td></tr></table></div></div>
+  <div class="cell span2" style="padding:0"><div class="ch"><span class="ct">What prices are telling you</span></div><div style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1.25rem"><div><p style="font-family:var(--mono);font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Cobalt spread signal</p><p style="font-size:12px;color:var(--txt2);line-height:1.7">LME official and Mysteel CNY are both flat-to-firm, but SMM reports refined cobalt at spot lows. The divergence signals recycling throughput pressuring primary sales in China while Western LME pricing holds. When Mysteel CNY rises faster than LME USD, Chinese buyers are paying up ahead of a recognised shortage — that's the Q2 signal to watch.</p></div><div><p style="font-family:var(--mono);font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem">Copper landed cost reality</p><p style="font-size:12px;color:var(--txt2);line-height:1.7">LME 3-month at $13,141 plus Lobito physical premium plus Section 232 tariffs means effective delivered cost to Rotterdam or US East Coast is closer to $14,800–15,100/t. Procurement directors quoting LME spot to their CFO are understating landed cost by 12–18%.</p></div></div></div>
+  <div class="cell span2" style="padding:0"><div class="ch"><span class="ct">Deal size &amp; commission calculator</span><span class="cm">Includes Lobito logistics premium on copper</span></div><div class="calc"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px"><div><p class="cl">Metal</p><select class="csel" id="cc-m" onchange="doCalc()"><option value="cobalt">Cobalt</option><option value="copper">Copper</option></select></div><div><p class="cl">Volume (t)</p><input type="number" class="ci" id="cc-v" placeholder="500" oninput="doCalc()" style="margin-bottom:0"></div><div><p class="cl">Incoterm</p><select class="csel" id="cc-i" onchange="doCalc()"><option>FOB</option><option>CIF</option><option>DDP</option></select></div></div><div class="cgrid"><div><p class="cl">Broker rate</p><select class="csel" id="cc-r" onchange="doCalc()"><option value="0.01">1%</option><option value="0.015">1.5%</option><option value="0.02">2%</option></select></div><div><p class="cl">Payable (%)</p><input type="number" class="ci" id="cc-p" value="97" oninput="doCalc()" style="margin-bottom:0"></div></div><div class="cres" id="cc-out">Enter volume to calculate.</div></div></div>
+  <div class="cell span2" style="padding:0"><div class="ch"><span class="ct">Market edge score — today</span><span class="cm">Information asymmetry across vectors</span></div><div style="padding:1.25rem"><div class="ebr"><span class="ebl">Supply disruption</span><div class="ebt"><div class="ebf" style="width:92%;background:var(--red)"></div></div><span class="ebv" style="color:var(--red)">92</span></div><div class="ebr"><span class="ebl">Price divergence</span><div class="ebt"><div class="ebf" style="width:74%;background:var(--amber)"></div></div><span class="ebv" style="color:var(--amber)">74</span></div><div class="ebr"><span class="ebl">Policy velocity</span><div class="ebt"><div class="ebf" style="width:81%;background:var(--amber)"></div></div><span class="ebv" style="color:var(--amber)">81</span></div><div class="ebr"><span class="ebl">Counterparty activity</span><div class="ebt"><div class="ebf" style="width:88%;background:var(--gold)"></div></div><span class="ebv" style="color:var(--gold)">88</span></div><div class="ebr"><span class="ebl">Logistics risk</span><div class="ebt"><div class="ebf" style="width:95%;background:var(--red)"></div></div><span class="ebv" style="color:var(--red)">95</span></div><p style="font-family:var(--mono);font-size:11px;color:var(--txt3);margin-top:8px">High = large edge for those who act first. Current environment elevated across all vectors.</p></div></div>
+</div></div>
+
+<!-- WHAT TO DO TODAY -->
+<div class="page" id="pg-action">
+<div class="grid">
+  <div class="cell-sm span3" style="padding:0"><div class="ch"><span class="ct">What to do today — role-specific actions</span><span class="cm" id="action-date"></span></div>
+    <div class="tabs"><button class="tab on" onclick="showT(this,'buyer')">Western Buyer</button><button class="tab" onclick="showT(this,'supplier')">DRC / Copperbelt Supplier</button><button class="tab" onclick="showT(this,'trader')">Commodity Trader</button></div>
+    <div class="tpane on" id="tp-buyer">
+      <div class="wtdi"><p class="wtdw">Procurement Director · Battery / EV / Defence / Aerospace</p><p class="wtda">Call Mercuria or Trafigura today to confirm Q2 and Q3 cobalt allocation windows</p><p class="wtdy">DRC leaching chemical cancellations mean producers are considering output cuts within 7–10 days. This is a pre-price signal. Buyers who confirm allocation this week get Q2 certainty. Buyers who wait get spot risk.</p><span class="wtdwin">Action window: today–Wednesday 22 April</span></div>
+      <div class="wtdi"><p class="wtdw">Procurement Director · Any Western Manufacturer with Copperbelt Copper Exposure</p><p class="wtda">Recalculate your Q2 landed copper cost — you are understating it by 12–18%</p><p class="wtdy">Lobito closed means +10–15% logistics premium. Section 232 tariffs add more on US-destined material. LME spot does not reflect your actual delivered cost. If you are quoting LME to your CFO, that number is wrong.</p><span class="wtdwin">Action window: today, before internal budget review</span></div>
+      <div class="wtdi"><p class="wtdw">Procurement Legal Team</p><p class="wtda">Initiate offtake drafting this week to capture force majeure protections</p><p class="wtdy">Lobito suspension + chemical disruption + DRC strategic reserve = documented force majeure conditions live right now. Offtakes signed this week can include these clauses with full justification. In June, counterparties will push back hard on the same clauses.</p><span class="wtdwin">Action window: this week only</span></div>
+      <div class="wtdi"><p class="wtdw">Procurement Director · Long-term Supply Security</p><p class="wtda">Identify Western-credentialled independent DRC producers for H2 2026 conversations</p><p class="wtdy">Gécamines locked 500,000t through Mercuria. DRC strategic reserve operationalising. China controls 78% of cobalt refining. If your chain runs through Chinese intermediaries or Mercuria only, you have concentration risk materialising in real time. Independent producers who can demonstrate RMI-compliant direct offtake are the alternative.</p><span class="wtdwin">Action window: Q2 2026</span></div>
+    </div>
+    <div class="tpane" id="tp-supplier">
+      <div class="wtdi"><p class="wtdw">Independent DRC or Zambian Producer</p><p class="wtda">Your pitch to Western buyers just got stronger — use it this week</p><p class="wtdy">Gécamines locked 500,000t through Mercuria. Western buyers who want non-state, non-Chinese-intermediated DRC supply now have a clearly articulated problem. Your pitch: "We are the alternative credentialled route." The demand is documented and the alternatives are visibly constrained.</p><span class="wtdwin">Action window: now</span></div>
+      <div class="wtdi"><p class="wtdw">Junior Miner or Emerging Producer</p><p class="wtda">Get RMI-compliant documentation in order before any buyer conversation</p><p class="wtdy">Western procurement directors at battery manufacturers, defence contractors, and EV OEMs have legal and reputational requirements around responsible sourcing. RMI compliance is the entry credential. Without it you cannot close with a Western buyer regardless of price.</p><span class="wtdwin">Action window: this month</span></div>
+      <div class="wtdi"><p class="wtdw">Producer with Copperbelt Operations</p><p class="wtda">Confirm Dar es Salaam or Durban routing capacity for Q2 before it is absorbed</p><p class="wtdy">Lobito closed. Every Copperbelt producer is competing for Dar and Durban capacity simultaneously. Capacity will be absorbed in order of booking. If you have not confirmed Q2 routing, do it today.</p><span class="wtdwin">Action window: today</span></div>
+    </div>
+    <div class="tpane" id="tp-trader">
+      <div class="wtdi"><p class="wtdw">Physical Commodity Trader · Cobalt</p><p class="wtda">Position for cobalt spot squeeze in 10–14 days if chemical restocking fails</p><p class="wtdy">DRC producers cancelled leaching chemical orders this week. If restocking does not happen in 7–10 days, output cuts follow. Output cuts precede LME price moves by 5–7 days as information travels mine to market. Identify which producers are most chemical-dependent — they signal first.</p><span class="wtdwin">Action window: 10–14 days</span></div>
+      <div class="wtdi"><p class="wtdw">Physical Commodity Trader · Copper</p><p class="wtda">Hedge the Iran diplomacy reversal — this dip is likely temporary</p><p class="wtdy">Copper softened on Iran peace speculation. This pattern historically reverses within 10 days when no formal ceasefire materialises. Lobito closure removed 10–15% of Copperbelt export routing efficiency simultaneously. The structural deficit remains — the Iran dip is tactical noise on a structural bull signal.</p><span class="wtdwin">Action window: 7–10 days</span></div>
+      <div class="wtdi"><p class="wtdw">Trader · Both Metals</p><p class="wtda">Monitor CMOC and Glencore for distress spot selling on output cut announcements</p><p class="wtdy">Chemical supply disruption to CMOC and Glencore DRC operations means both may need to sell spot cobalt at distressed prices if they announce output reductions. A producer announcing a cut is announcing forced below-market selling to cover cashflow. That is a buying opportunity on both physical and the screen.</p><span class="wtdwin">Action window: 10 days</span></div>
+    </div>
+  </div>
+  <div class="cell-sm" style="padding:0"><div class="ch"><span class="ct">Route status</span></div>
+    <div class="rt"><div style="width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0"></div><div><p class="rtn">Lobito Corridor</p><p class="rtnote">Angola → Atlantic. Suspended 12 Apr. Est. late Q2 reopening.</p></div><span class="rts bc">CLOSED</span></div>
+    <div class="rt"><div style="width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0"></div><div><p class="rtn">Dar es Salaam</p><p class="rtnote">Tanzania Indian Ocean. Capacity under pressure. +8–12 day transit.</p></div><span class="rts bh">BUSY</span></div>
+    <div class="rt"><div style="width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0"></div><div><p class="rtn">Durban</p><p class="rtnote">South Africa. Absorbing Lobito overflow. Premium routing.</p></div><span class="rts bh">BUSY</span></div>
+    <div class="rt"><div style="width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div><p class="rtn">Beira (Mozambique)</p><p class="rtnote">Alternative Indian Ocean exit. Less congested currently.</p></div><span class="rts bg">OPEN</span></div>
+    <div style="padding:1rem 1.25rem;border-top:1px solid var(--bdr)"><p style="font-family:var(--mono);font-size:11px;color:var(--gold);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.08em">Need a counterparty?</p><p style="font-family:var(--mono);font-size:11px;color:var(--txt2);line-height:1.7;margin-bottom:.75rem">If today's actions require a buyer or supplier you don't yet have — that's the introduction. 1–2% commission, 24-month tail.</p><button class="pccta" onclick="openModal()">Request an introduction →</button></div>
+  </div>
+</div></div>
+
+<!-- DAILY BRIEF -->
+<div class="page" id="pg-brief">
+<div class="grid">
+  <div class="cell-sm span3" style="padding:0">
+    <div class="ch"><span class="ct">Daily Brief</span><span class="cm" id="brief-issue">Friday 17 April 2026 · Issue #2</span></div>
+
+    <!-- GATE — shown to first-time visitors -->
+    <div id="brief-gate" style="display:flex;align-items:center;justify-content:center;padding:3rem 2rem;background:var(--s1)">
+      <div style="max-width:480px;width:100%;text-align:center">
+        <p style="font-family:var(--serif);font-size:26px;color:var(--txt);margin-bottom:10px">Read today's brief</p>
+        <p style="font-size:14px;color:var(--txt2);line-height:1.7;margin-bottom:2rem">Enter your email to unlock the full brief — prices, supply chain signals, geopolitical risk, demand drivers, and Broker's Lens. Delivered free to your inbox at 6:30am BST every weekday.</p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px">
+          <input type="email" id="gate-email" placeholder="work@company.com"
+            onkeydown="if(event.key==='Enter')submitGate()"
+            style="flex:1;min-width:220px;max-width:280px;background:var(--s3);border:1px solid var(--bdr2);border-radius:6px;padding:11px 16px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:border-color .15s"
+            onfocus="this.style.borderColor='var(--goldb)'" onblur="this.style.borderColor='var(--bdr2)'">
+          <button onclick="submitGate()" id="gate-btn"
+            style="padding:11px 24px;background:var(--goldd);border:1px solid var(--goldb);border-radius:6px;font-family:var(--mono);font-size:12px;color:var(--gold);cursor:pointer;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;transition:all .15s">
+            Unlock free →
+          </button>
+        </div>
+        <p id="gate-msg" style="font-family:var(--mono);font-size:11px;color:var(--txt3)">No password. No spam. Unsubscribe anytime.</p>
+      </div>
+    </div>
+
+    <!-- FULL BRIEF — hidden until email submitted -->
+    <div id="brief-content" style="display:none">
+      <div class="tabs" id="brief-tabs">
+        <button class="tab on" onclick="showT(this,'full')">Full brief</button>
+        <button class="tab" onclick="showT(this,'blens')">Broker's lens</button>
+        <button class="tab" onclick="showT(this,'psnap')">Price snapshot</button>
+      </div>
+      <div class="tpane on bw" id="tp-full">
+        <p class="bhead">Price Snapshot</p>
+        <p class="bprice" id="b-cobalt-line">Cobalt: $56,290/t · LME · 17 Apr 2026 — Feedstock tightness supporting prices; flat into April after six months of gains.</p>
+        <p class="bprice" id="b-copper-line">Copper: $13,141/t · Kitco · 17 Apr 2026 — Softened as traders positioned for Iran peace negotiations; structural deficit and Lobito closure provide floor support.</p>
+        <p class="bhead">Supply Chain Signals</p>
+        <p class="bpara" id="b-supply">Gécamines has committed an additional tranche of copper to the US market through its Mercuria joint venture, raising total pledges to 500,000 tonnes — a fivefold increase from January (Business Insider Africa, 15 Apr). The commitment encompasses Glencore's Kamoto Copper Company and Tenke Fungurume. DRC's deliberate pivot toward North American buyers continues, though Western buyers remain intermediated through Mercuria rather than accessing DRC supply directly.<br><br>The Lobito Corridor rail suspension — caused by Angola flooding around 12 April — has disrupted copper and cobalt exports for First Quantum Minerals' Kansanshi and Sentinel operations, Barrick's Lumwana mine, and Ivanhoe Mines assets in Zambia. Rerouting via Durban and Dar es Salaam adds 8–12 days of transit and a 10–15% logistics premium. Sonangol is in advanced talks with Botswana on a stake in the $6.6bn Lobito refinery (Reuters, 15 Apr).<br><br>Congo's leading producers were forced to cut leaching chemical usage this month after suppliers cancelled or withdrew orders in response to Iranian supply chain disruptions. CMOC and Glencore operations are both affected. If chemical restocking does not occur within 7–10 days, output reductions are under active consideration (Reuters, 13 Apr).</p>
+        <p class="bhead">Geopolitical Risk</p>
+        <p class="bpara" id="b-geo">DRC formalised a strategic reserve for cobalt, coltan, and germanium this month, enabling the state to stockpile unused export quotas and exert direct price influence (Miningmx, 16 Apr). Glencore simultaneously settled a $60 million DRC tax dispute and formalised a security framework with the government (Africa Intelligence, 16 Apr). The EU REsourceEU buyer-seller matching platform launched 13 April. The EU and US are finalising a critical minerals coordination pact expected Q2.</p>
+        <p class="bhead">Demand Drivers</p>
+        <p class="bpara" id="b-demand">AI data centre battery demand is creating a secondary procurement shock beneath EV supply chains, with Big Tech infrastructure competing directly for large-format battery allocation. Section 232 copper derivative tariffs active from 6 April are already repricing downstream contracts. Defence sector cobalt demand remains elevated; Sovereign Metals' Kasiya rutile-graphite project in Malawi signals European manufacturers are actively evaluating non-DRC sourcing.</p>
+        <p class="bhead">Broker's Lens</p>
+        <div class="lens" id="b-lens">DRC's strategic reserve announcement combined with Glencore's $60m tax settlement signals the government is weaponising export quotas to extract concessions from majors — call your Mercuria and Trafigura contacts within 48 hours to lock in cobalt and copper allocations before reserve mechanics are operationalised, likely by end of May. The Lobito flooding has created a 4–6 week logistics premium that masks a harder truth: the chemical supply crisis means even mines with rail access cannot ramp output, so procurement teams securing offtake agreements this week will be able to negotiate force majeure clauses that competitors in June will not. Do not wait for the corridor to reopen — the real constraint is chemical availability through Q3, not rail capacity.</div>
+      </div>
+      <div class="tpane bw" id="tp-blens">
+        <div class="lens" style="margin:1.5rem;font-size:14px;line-height:1.9" id="b-lens2">DRC's strategic reserve announcement combined with Glencore's $60m tax settlement signals the government is weaponising export quotas to extract concessions from majors — call your Mercuria and Trafigura contacts within 48 hours to lock in cobalt and copper allocations before reserve mechanics are operationalised, likely by end of May. The Lobito flooding has created a 4–6 week logistics premium that masks a harder truth: the chemical supply crisis means even mines with rail access cannot ramp output, so procurement teams securing offtake agreements this week will be able to negotiate force majeure clauses that competitors in June will not. Do not wait for the corridor to reopen — the real constraint is chemical availability through Q3, not rail capacity.</div>
+      </div>
+      <div class="tpane bw" id="tp-psnap">
+        <p class="bhead">Cobalt</p>
+        <p class="bprice" id="b-co-snap">$56,290/t · LME indicative · 17 Apr 2026</p>
+        <p class="bpara">Flat into April after six months of gains. Feedstock tightness — not demand recovery — is the support mechanism. Mysteel CNY: ¥408,818–411,136/t (14 Apr, +¥3,409 on day). LME-Mysteel spread divergence is the signal to watch: when CNY rises faster than USD, Chinese buyers are paying up ahead of a recognised shortage.</p>
+        <p class="bhead" style="margin-top:1.25rem">Copper</p>
+        <p class="bprice" id="b-cu-snap">$13,141/t · Kitco · 17 Apr 2026</p>
+        <p class="bpara">+30% YoY. Section 232 tariffs repricing downstream contracts from 6 Apr. Lobito physical premium adds 10–15% to Copperbelt-origin material. Effective landed cost to Rotterdam or US East Coast is $14,800–15,100/t — procurement directors quoting LME to their CFO are understating landed cost by 12–18%.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="procard"><div class="pct">Pro Access</div><p class="pcs">Pro is a working relationship, not a subscription. You get the broker's direct attention. When we find you a counterparty, you give us the introduction.</p><div class="pcf"><div class="pcd"></div><p class="pcft">Early sight of matched deal opportunities before public announcement</p></div><div class="pcf"><div class="pcd"></div><p class="pcft">Weekly 30-min call on your specific supply situation</p></div><div class="pcf"><div class="pcd"></div><p class="pcft">Direct line — same-day response on urgent questions</p></div><div class="pcf"><div class="pcd"></div><p class="pcft">Named in active buyer/supplier network</p></div><div class="pcf"><div class="pcd"></div><p class="pcft">Introduction priority when a match appears</p></div><p class="pcs" style="margin-top:1rem;color:var(--txt3)">Pro Access is free. The commission on a completed introduction is how we earn — 1–2% on gross transaction value.</p><button class="pccta" onclick="openModal()">Request Pro Access — free →</button></div>
+</div></div>
+
+<!-- MARKET INTEL -->
+<div class="page" id="pg-intel">
+<div class="grid">
+  <div class="cell span2" style="padding:0"><div class="ch"><span class="ct">DRC Market Structure</span></div>
+    <div class="intel-block"><p class="intel-head">Why Western buyers struggle to source DRC cobalt directly</p><p class="intel-body">DRC produces ~73% of global mined cobalt, but China refines ~78% of it. The supply chain has two chokepoints: Chinese refiners downstream, and Chinese-backed traders (CMOC, Sicomines) and state intermediaries (Gécamines via Mercuria, EGC mandatory offtake) upstream. A Western buyer who calls a DRC mine directly finds either a Chinese-controlled operation or a state entity routing through a state-approved intermediary. Independent Western-credentialled producers exist — they are the structural opportunity this business is built on.</p></div>
+    <div class="intel-block"><p class="intel-head">Key vocabulary — what terms mean in practice</p><table class="vtbl"><tr><th>Term</th><th>What it means for your deal</th></tr><tr><td>Payable</td><td>% of contained metal you actually pay for. 97% on cobalt hydroxide is standard. 95% = worse deal. Negotiate this first.</td></tr><tr><td>FOB / CIF / DDP</td><td>FOB: you take risk at port of loading. CIF: seller pays insurance and freight to named port. DDP: seller delivers to your door, all costs paid. Price increases FOB → CIF → DDP.</td></tr><tr><td>Hydroxide vs metal vs sulphate</td><td>Hydroxide is the DRC intermediate. Metal is refined. Sulphate is battery-ready. Confirm which your process requires before any RFQ — specs and pricing differ significantly.</td></tr><tr><td>Offtake agreement</td><td>Forward commitment to buy a specified volume at an agreed pricing formula. Creates supply certainty for buyer, revenue certainty for seller. The document you want before you reveal counterparty identities.</td></tr><tr><td>RMI compliance</td><td>Responsible Minerals Initiative audit. Required by most Western EV, aerospace and defence buyers. Non-compliant supplier cannot close regardless of price.</td></tr><tr><td>ARECOMS quota</td><td>DRC government annual export cap. Currently 87,000t cobalt/yr through 2027. New strategic reserve means state can withhold unused quota from market.</td></tr><tr><td>TC/RC</td><td>Treatment charge / refining charge. Fee smelters charge to process concentrate. Affects economics of toll-refining arrangements.</td></tr><tr><td>Black mass</td><td>Shredded EV battery material before hydromet processing. Growing recycled cobalt feedstock. Affects primary pricing as recycled supply grows.</td></tr><tr><td>Warrant holder</td><td>LME warrant = ownership of a specific lot in an LME warehouse. Warrant positions reveal physical tightness not visible in futures prices.</td></tr><tr><td>MHP</td><td>Mixed hydroxide precipitate. Intermediate nickel-cobalt product. Increasingly relevant as Western refiners build direct MHP-to-battery chemical routes.</td></tr></table></div>
+  </div>
+  <div class="cell span2" style="padding:0"><div class="ch"><span class="ct">Current market context — April 2026</span></div>
+    <div class="intel-block"><p class="intel-head">The structural shift happening right now</p><p class="intel-body">Three things are happening simultaneously that have not aligned before: DRC is centralising supply control (strategic reserve + Gécamines-Mercuria JV + Glencore security framework). Western governments are building alternative procurement infrastructure (Section 232 tariffs, EU REsourceEU, US-EU coordination pact). And the Copperbelt export infrastructure just broke (Lobito). The result: buyers who have not built direct DRC relationships are about to discover that their broker, their trading house contact, and their existing offtake are all intermediated through the same two or three entities — and those entities are under state direction. The buyers who act in Q2 2026 will have materially different supply chain options in 2027 than those who wait.</p></div>
+    <div class="intel-block"><p class="intel-head">The opportunity for independent suppliers right now</p><p class="intel-body">The Gécamines-Mercuria 500,000t commitment and the DRC strategic reserve have, paradoxically, strengthened the pitch of independent Western-credentialled producers. Every tonne that flows through Mercuria is a tonne that Western buyers cannot claim as a direct, transparent, RMI-verified supply chain. The regulatory pressure on Western manufacturers — EU Battery Regulation, US IRA domestic content requirements, defence supply chain traceability — means "bought through a trader" is becoming an inadequate answer to a CFO or regulator. Independent producers who can demonstrate Western-credentialled, RMI-compliant direct offtake are not competing with Gécamines — they are in a different market segment that Gécamines cannot serve.</p></div>
+    <div class="intel-block"><p class="intel-head">Daily reading habit — 10 minutes</p><p class="intel-body" style="font-family:var(--mono);font-size:12px;line-height:1.9;color:var(--txt2)">Mining.com — overnight news<br>LME.com — cobalt and copper official prices<br>Fastmarkets (1 free article/day) — market assessment<br>Mysteel.net — Chinese domestic cobalt price<br>Google Alerts: "cobalt DRC" · "copper offtake" · "critical minerals supply chain"</p></div>
+  </div>
+</div></div>
+
+<!-- MODAL -->
+<div class="overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="mclose" onclick="closeModal()">✕</button>
+    <p class="mtitle">Pro Access</p>
+    <p class="msub">Pro is a working relationship, not a subscription. You get direct access to the broker and early deal flow. Pro Access is completely free — we earn only on completed introductions (1–2% commission).</p>
+    <div class="mfeat"><div class="mfdot"></div><p class="mft">Early sight of deal opportunities before public matching</p></div>
+    <div class="mfeat"><div class="mfdot"></div><p class="mft">Weekly 30-min market call — your specific situation</p></div>
+    <div class="mfeat"><div class="mfdot"></div><p class="mft">Direct WhatsApp/email — same-day response</p></div>
+    <div class="mfeat"><div class="mfdot"></div><p class="mft">Named in active buyer/supplier network</p></div>
+    <input class="minput" type="email" placeholder="Work email" id="m-email">
+    <input class="minput" type="text" placeholder="Company &amp; role (e.g. Head of Procurement, Umicore)" id="m-role">
+    <textarea class="minput" rows="2" placeholder="What are you looking for? (buyer / supplier / both)" id="m-need" style="resize:none"></textarea>
+    <button class="mbtn" onclick="submitPro()">Request access — response within 24 hours</button>
+    <p class="mnote">Pro Access is free. We only earn when an introduction leads to a completed deal — 1–2% on gross transaction value, 24-month tail.</p>
+  </div>
+</div>
+
+<script>
+// ═══════════════ DATA ═══════════════
+// Fetch data.json from the same repo (GitHub Pages serves it automatically)
+// Falls back to static defaults if fetch fails (e.g. first deploy)
+const DATA_URL = 'https://raw.githubusercontent.com/lobitointelligencegroup-svg/lobito-brief-agent/data/data.json';
+let D = null; // global data object
+
+async function loadData() {
+  try {
+    const r = await fetch(DATA_URL + '?t=' + Date.now(), {cache:'no-store'});
+    if (!r.ok) throw new Error('no data.json');
+    D = await r.json();
+    document.getElementById('live-label').textContent =
+      D.date_short ? `Updated ${D.date_short}` : 'Live';
+    renderAll();
+  } catch(e) {
+    console.warn('data.json not found — using static defaults:', e.message);
+    document.getElementById('live-label').textContent = 'Static';
+    renderStaticFallback();
+  }
+}
+
+function renderAll() {
+  if (!D) return;
+  renderPrices();
+  renderStatus();
+  renderSignals();
+  renderBrief();
+  renderDates();
+}
+
+// ═══════════════ PRICES ═══════════════
+function renderPrices() {
+  const co = D.prices?.cobalt;
+  const cu = D.prices?.copper;
+  if (co?.raw && co.raw !== 'unavailable') {
+    const fmt = co.value ? '$' + co.value.toLocaleString('en-US') : co.raw.split('·')[0].trim();
+    document.getElementById('co-p').textContent  = fmt;
+    document.getElementById('co-lme').textContent = fmt;
+    document.getElementById('pt-co').textContent  = fmt;
+    document.getElementById('cu-m').textContent   = '';
+    document.getElementById('co-m').textContent   = (co.source||'') + (co.date ? ' · ' + co.date : '');
+    document.getElementById('co-c').innerHTML = badge('up', '+161% YoY');
+  }
+  if (cu?.raw && cu.raw !== 'unavailable') {
+    const fmt = cu.value ? '$' + cu.value.toLocaleString('en-US') : cu.raw.split('·')[0].trim();
+    document.getElementById('cu-p').textContent  = fmt;
+    document.getElementById('cu-sp').textContent = fmt;
+    document.getElementById('pt-cu').textContent  = fmt;
+    document.getElementById('cu-m').textContent   = (cu.source||'') + (cu.date ? ' · ' + cu.date : '');
+    document.getElementById('cu-c').innerHTML = badge('up', '+30% YoY');
+  }
+  if (document.getElementById('price-updated'))
+    document.getElementById('price-updated').textContent = D.date_short || '';
+}
+
+function badge(dir, label) {
+  const cls = dir==='up'?'cup':dir==='down'?'cdn':'cfl';
+  const arrow = dir==='up'?'▲':dir==='down'?'▼':'—';
+  return `<span class="phchg ${cls}">${arrow} ${label}</span>`;
+}
+
+// ═══════════════ STATUS ═══════════════
+function renderStatus() {
+  if (!D?.status) return;
+  const map = {lobito:'lobito', chemical:'chem', quota:'quota', policy:'policy'};
+  Object.entries(map).forEach(([key, id]) => {
+    const s = D.status[key];
+    if (!s) return;
+    const el = document.getElementById(`st-${id}-val`);
+    const nb = document.getElementById(`st-${id}-note`);
+    const bb = document.getElementById(`st-${id}-badge`);
+    if (el) el.textContent = s.value || '';
+    if (nb) nb.textContent = s.note || '';
+    if (bb) bb.textContent = (s.level==='critical'?'● ': s.level==='high'?'⚑ ':s.level==='blue'?'↑ ':'') + (s.state||'');
+  });
+}
+
+// ═══════════════ SIGNALS ═══════════════
+const SIG_COPY = [
+  {priority:'critical', title:'DRC leaching chemical orders cancelled — output cuts likely within 7–10 days',
+   text:'CMOC, Glencore and unnamed operators cancelled leaching chemical orders this week. Root cause: Iranian supply chain disruption. Without restocking, producers must curtail operations. This is a pre-price signal — spot availability will tighten before screens move.',
+   action:'Contact Trafigura and Mercuria before Wednesday to confirm Q2 and Q3 cobalt allocation. Ask about producer restocking timelines.',
+   source:'Reuters · 13 Apr 2026', age:'4d ago'},
+  {priority:'critical', title:'Lobito Corridor suspended — no reopening before late Q2. Real cost: +10–15% on all Copperbelt exports',
+   text:'Angola flooding damaged tracks near Cubal and Benguela on 12 April. First Quantum, Barrick and Ivanhoe rerouting via Durban and Dar es Salaam. Transit adds 8–12 days and 10–15% logistics cost.',
+   action:'If you have Zambia or Katanga shipments in Q2, secure Dar/Durban routing this week — capacity is being absorbed fast.',
+   source:'Reuters, Bloomberg, Northern Miner · 12–14 Apr 2026', age:'5d ago'},
+  {priority:'high', title:'DRC establishes strategic cobalt, coltan & germanium reserve — state now controls three supply levers',
+   text:'Kinshasa formalised authority to stockpile unused ARECOMS export quotas. This is a third lever alongside quota caps and EGC mandatory offtake. State can suppress spot availability to support a price floor without formal quota reduction.',
+   action:'Western procurement teams must factor state-level supply manipulation into forward contract planning. Request allocation confirmation from your trading house this week.',
+   source:'Miningmx, African Mining Market · 16 Apr 2026', age:'1d ago'},
+  {priority:'high', title:'Gécamines raises US copper commitment to 500,000t via Mercuria JV — Western buyers still intermediated',
+   text:'Fivefold increase from January. Encompasses KCC and Tenke Fungurume. Volume is real — but routing remains through Mercuria, so Western buyers gain access without gaining direct DRC relationships.',
+   action:'Buyers: use this as leverage in Mercuria negotiations. Producers: your pitch is now "we are the alternative Western-credentialled route Gécamines cannot offer."',
+   source:'Business Insider Africa, Semafor · 15–16 Apr 2026', age:'2d ago'},
+  {priority:'high', title:'Force majeure negotiating window — open this week only',
+   text:'Lobito suspension + chemical disruption + DRC reserve = documented force majeure conditions live right now. Offtakes signed this week can legitimately include these clauses. Agreements in June will face much harder counterparty resistance.',
+   action:'Procurement legal teams should initiate offtake drafting this week specifically to capture force majeure protections.',
+   source:'Market context · ongoing', age:'today'},
+  {priority:'watch', title:'EU REsourceEU platform launched — battery material buyer-seller matching',
+   text:'Launched 13 April. Covers lithium, nickel, cobalt. First institutional EU infrastructure for direct offtake outside Chinese intermediaries. Early stage — adoption will be slow but worth monitoring.',
+   action:'Register as both observer and participant. Suppliers: list your material. Buyers: monitor who else is listing requirements.',
+   source:'European Commission · 13 Apr 2026', age:'4d ago'},
+];
+
+function priorityClass(p) {
+  if (p==='critical') return 'pc';
+  if (p==='high') return 'ph2';
+  if (p==='watch') return 'pw';
+  return 'pm';
+}
+function priorityLabel(p) {
+  if (p==='critical') return 'Critical';
+  if (p==='high') return 'High';
+  if (p==='watch') return 'Watch';
+  return 'Monitor';
+}
+
+function renderSignals() {
+  // Use live signal titles from data.json if available, else use SIG_COPY
+  const signals = D?.signals?.length ? D.signals.map((s,i) => ({
+    ...SIG_COPY[i] || SIG_COPY[SIG_COPY.length-1],
+    title: s.title || SIG_COPY[i]?.title || '',
+    source: (s.source||'') + (s.age ? ' · ' + s.age : ''),
+  })) : SIG_COPY;
+
+  // Top signals (overview page — 4 items, compact)
+  const topEl = document.getElementById('top-signals');
+  if (topEl) topEl.innerHTML = signals.slice(0,4).map(s => `
+    <div class="sig" onclick="nav(document.querySelector('.nav-pill:nth-child(2)'),'signals')">
+      <span class="sp ${priorityClass(s.priority)}">${priorityLabel(s.priority)}</span>
+      <div><p class="st">${s.title}</p>${s.action?`<p class="sa">${s.action.slice(0,80)}…</p>`:''}</div>
+      <span class="sage">${s.age||''}</span>
+    </div>`).join('');
+
+  // Full signals (signals page)
+  const fullEl = document.getElementById('full-signals');
+  if (fullEl) fullEl.innerHTML = signals.map(s => `
+    <div class="sig">
+      <span class="sp ${priorityClass(s.priority)}">${priorityLabel(s.priority)}</span>
+      <div>
+        <p class="st">${s.title}</p>
+        <p class="sb2">${s.text||''}</p>
+        ${s.action?`<p class="sa">${s.action}</p>`:''}
+        <p class="ss">${s.source||''}</p>
+      </div>
+      <span class="sage">${s.age||''}</span>
+    </div>`).join('');
+}
+
+// ═══════════════ BRIEF GATE ═══════════════
+const BRIEF_UNLOCKED_KEY = 'lig_brief_unlocked';
+
+function submitGate() {
+  const email = document.getElementById('gate-email').value.trim();
+  const btn   = document.getElementById('gate-btn');
+  const msg   = document.getElementById('gate-msg');
+  if (!email || !email.includes('@')) {
+    msg.textContent = 'Please enter a valid email.';
+    msg.style.color = 'var(--red)';
+    return;
+  }
+  // Unlock immediately — no waiting, no redirect
+  localStorage.setItem(BRIEF_UNLOCKED_KEY, '1');
+  // Fire-and-forget to Beehiiv — update this URL with your real publication ID
+  fetch('https://api.beehiiv.com/v2/publications/pub_db020090-f413-45ca-99ed-d9526e5c763e/subscriptions', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({email, reactivate_existing:true, send_welcome_email:true, utm_source:'dashboard'})
+  }).catch(()=>{});
+  showFullBrief();
+}
+
+function showFullBrief() {
+  const gate    = document.getElementById('brief-gate');
+  const content = document.getElementById('brief-content');
+  if (gate)    gate.style.display    = 'none';
+  if (content) content.style.display = 'block';
+}
+
+// ═══════════════ BRIEF RENDER ═══════════════
+function renderBrief() {
+  // Gate vs content based on localStorage
+  if (localStorage.getItem(BRIEF_UNLOCKED_KEY)) showFullBrief();
+
+  // Update hardcoded content with live data from data.json if available
+  if (!D?.brief && !D?.prices) return;
+  const b = D?.brief || {};
+  const p = D?.prices || {};
+
+  const setHTML = (id, html) => { const el = document.getElementById(id); if (el && html) el.innerHTML = html; };
+  const setTxt  = (id, val)  => { const el = document.getElementById(id); if (el && val) el.textContent = val; };
+
+  if (p.cobalt?.raw && p.cobalt.raw !== 'unavailable') {
+    setTxt('b-cobalt-line', 'Cobalt: ' + p.cobalt.raw + ' — Feedstock tightness supporting prices; flat into April after six months of gains.');
+    setTxt('b-co-snap', p.cobalt.raw);
+  }
+  if (p.copper?.raw && p.copper.raw !== 'unavailable') {
+    setTxt('b-copper-line', 'Copper: ' + p.copper.raw + ' — Softened on Iran diplomacy speculation; Lobito closure and structural deficit provide floor support.');
+    setTxt('b-cu-snap', p.copper.raw);
+  }
+  if (b.supply_chain)  setHTML('b-supply', b.supply_chain.replace(/\n\n/g,'<br><br>'));
+  if (b.geopolitical)  setHTML('b-geo',    b.geopolitical.replace(/\n\n/g,'<br><br>'));
+  if (b.demand)        setHTML('b-demand', b.demand.replace(/\n\n/g,'<br><br>'));
+  if (b.brokers_lens) { setHTML('b-lens', b.brokers_lens); setHTML('b-lens2', b.brokers_lens); }
+  if (b.full_text) {
+    const el = document.getElementById('tp-full');
+    if (el) el.innerHTML = formatBriefText(b.full_text);
+  }
+  if (D?.date) setTxt('brief-issue', D.date);
+}
+
+function formatBriefText(text) {
+  const sections = ['PRICE SNAPSHOT','SUPPLY CHAIN SIGNALS','GEOPOLITICAL RISK','DEMAND DRIVERS',"BROKER'S LENS"];
+  let html = '<div class="bw">', remaining = text;
+  sections.forEach(s => {
+    const idx = remaining.indexOf(s);
+    if (idx === -1) return;
+    const before = remaining.slice(0, idx);
+    if (before.trim()) html += `<p class="bpara">${before.trim()}</p>`;
+    html += `<p class="bhead">${s}</p>`;
+    remaining = remaining.slice(idx + s.length);
+  });
+  html += text.includes("BROKER'S LENS") ? `<div class="lens">${remaining.trim()}</div>` : `<p class="bpara">${remaining.trim()}</p>`;
+  return html + '</div>';
+}
+
+// ═══════════════ DATES ═══════════════
+function renderDates() {
+  const d = D?.date || '';
+  ['sig-date','sig-date2','action-date'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = d ? `Updated ${d}` : '';
+  });
+  const bi = document.getElementById('brief-issue');
+  if (bi) bi.textContent = d || '';
+}
+
+// ═══════════════ STATIC FALLBACK ═══════════════
+function renderStaticFallback() {
+  // Prices
+  document.getElementById('co-p').textContent = '$56,290';
+  document.getElementById('cu-p').textContent = '$13,141';
+  document.getElementById('co-lme').textContent = '$56,290';
+  document.getElementById('cu-sp').textContent = '$13,141';
+  document.getElementById('co-c').innerHTML = badge('up', '+161% YoY');
+  document.getElementById('cu-c').innerHTML = badge('up', '+30% YoY');
+  document.getElementById('co-m').textContent = 'LME indicative · Apr 2026';
+  document.getElementById('cu-m').textContent = 'Kitco · Apr 2026';
+  // Signals
+  D = { signals: [], status: {}, prices: {cobalt:{raw:'unavailable'},copper:{raw:'unavailable'}}, brief: null };
+  renderSignals();
+}
+
+// ═══════════════ LIVE PRICE FETCH (client-side top-up) ═══════════════
+// Tries to fetch fresher prices via proxy on top of data.json
+async function tryFreshPrices() {
+  try {
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://en.macromicro.me/series/5630/copper-contract')}`, {signal:AbortSignal.timeout(8000)});
+    const {contents} = await r.json();
+    const m = contents.match(/202\d-\d{2}-\d{2}[^0-9]*([\d,]+\.\d+)/);
+    if (m) {
+      const p = parseFloat(m[1].replace(/,/g,''));
+      if (p > 5000 && p < 20000) {
+        const fmt = '$' + Math.round(p).toLocaleString('en-US');
+        ['cu-p','cu-sp','pt-cu'].forEach(id => {
+          const el = document.getElementById(id); if (el) el.textContent = fmt;
+        });
+        document.getElementById('cu-m').textContent = 'MacroMicro · LME 3-month · just now';
+      }
+    }
+  } catch {}
+}
+
+// ═══════════════ NAV ═══════════════
+function nav(btn, id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+  document.getElementById('pg-' + id).classList.add('active');
+  if (btn?.classList) btn.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showT(btn, id) {
+  const pg = btn.closest('.page');
+  pg.querySelectorAll('.tpane').forEach(t => t.classList.remove('on'));
+  pg.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  const el = document.getElementById('tp-' + id);
+  if (el) el.classList.add('on');
+  btn.classList.add('on');
+}
+
+// ═══════════════ CALC ═══════════════
+const CP = {cobalt: 56290, copper: 13141};
+const INCOST = {FOB: 0, CIF: 0.04, DDP: 0.09};
+function doCalc() {
+  const m = document.getElementById('cc-m').value;
+  const v = parseFloat(document.getElementById('cc-v').value) || 0;
+  const inc = document.getElementById('cc-i').value;
+  const r = parseFloat(document.getElementById('cc-r').value);
+  const pay = (parseFloat(document.getElementById('cc-p').value) || 97) / 100;
+  const out = document.getElementById('cc-out');
+  if (!v) { out.textContent = 'Enter volume to calculate.'; return; }
+  const base = (D?.prices?.[m]?.value) || CP[m];
+  const logPrem = m === 'copper' ? 0.12 : 0;
+  const adj = base * pay * (1 + INCOST[inc]) * (1 + logPrem);
+  const gtv = adj * v;
+  const fee = gtv * r;
+  out.innerHTML = `Adj. price: $${Math.round(adj).toLocaleString()}/t (${(pay*100).toFixed(0)}% payable, ${inc}${logPrem?', +12% Lobito premium':''})<br>GTV: $${Math.round(gtv).toLocaleString()}<br>Commission @ ${(r*100)}%: <span class="big">$${Math.round(fee).toLocaleString()}</span>`;
+}
+
+// ═══════════════ SUBSCRIBE ═══════════════
+function doSub() {
+  // Subscribe form is now handled by Beehiiv embed directly.
+}
+
+// ═══════════════ PRO MODAL ═══════════════
+function openModal() { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function submitPro() {
+  const e = document.getElementById('m-email').value.trim();
+  const role = document.getElementById('m-role').value.trim();
+  const need = document.getElementById('m-need').value.trim();
+  if (!e) { alert('Please enter your email.'); return; }
+  window.open(`mailto:lobitointelligencegroup@gmail.com?subject=Pro Access — ${encodeURIComponent(role)}&body=Email: ${encodeURIComponent(e)}%0ARole: ${encodeURIComponent(role)}%0ALooking for: ${encodeURIComponent(need)}`, '_blank');
+  closeModal();
+}
+
+// ═══════════════ CLOCK ═══════════════
+function tick() {
+  const n = new Date(), p = x => String(x).padStart(2,'0');
+  document.getElementById('clk').textContent = `${p(n.getHours())}:${p(n.getMinutes())} BST · ${n.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+}
+tick(); setInterval(tick, 15000);
+
+// ═══════════════ INIT ═══════════════
+loadData().then(() => tryFreshPrices());
+</script>
+</body>
+</html>
