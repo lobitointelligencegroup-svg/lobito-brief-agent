@@ -829,7 +829,7 @@ body { background: var(--bg); color: var(--txt); font-family: var(--sans);
 // ═══════════════ DATA ═══════════════
 // Fetch data.json from the same repo (GitHub Pages serves it automatically)
 // Falls back to static defaults if fetch fails (e.g. first deploy)
-const DATA_URL = './data.json';
+const DATA_URL = 'https://raw.githubusercontent.com/lobitointelligencegroup-svg/lobito-brief-agent/data/data.json';
 let D = null; // global data object
 
 async function loadData() {
@@ -991,7 +991,7 @@ function submitGate() {
   // Unlock immediately — no waiting, no redirect
   localStorage.setItem(BRIEF_UNLOCKED_KEY, '1');
   // Fire-and-forget to Beehiiv — update this URL with your real publication ID
-  fetch('https://api.beehiiv.com/v2/publications/pub_061d4b1d-7874-4117-807c-55a6e2348b83/subscriptions', {
+  fetch('https://api.beehiiv.com/v2/publications/pub_db020090-f413-45ca-99ed-d9526e5c763e/subscriptions', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({email, reactivate_existing:true, send_welcome_email:true, utm_source:'dashboard'})
