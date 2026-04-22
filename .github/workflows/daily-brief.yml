@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: write        # needed to commit data.json back to repo
+      contents: write
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repo (main)
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -26,10 +26,15 @@ jobs:
           GMAIL_USER:         ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
 
-      - name: Commit data.json to repo
+      - name: Push data.json to data branch
         run: |
           git config user.name  "Lobito Brief Bot"
           git config user.email "actions@github.com"
+          # Switch to (or create) the data branch
+          git fetch origin data:data 2>/dev/null || git checkout --orphan data
+          git checkout data 2>/dev/null || true
+          # Copy the freshly written data.json onto the data branch
+          git checkout main -- data.json 2>/dev/null || true
           git add data.json
           git diff --staged --quiet || git commit -m "Brief data: $(date -u '+%a %d %b %Y')"
-          git push
+          git push origin data
