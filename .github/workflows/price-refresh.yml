@@ -2,12 +2,10 @@ name: Price Refresh
 
 on:
   schedule:
-    # Runs at 8am, 11am, 2pm, 4:30pm BST (7am, 10am, 1pm, 3:30pm UTC)
-    # Covers LME open through afternoon session on weekdays
-    - cron: '0 7 * * 1-5'
-    - cron: '0 10 * * 1-5'
-    - cron: '0 13 * * 1-5'
-    - cron: '30 15 * * 1-5'
+    - cron: '0 7 * * 1-5'    # 8am BST
+    - cron: '0 10 * * 1-5'   # 11am BST
+    - cron: '0 13 * * 1-5'   # 2pm BST
+    - cron: '30 15 * * 1-5'  # 4:30pm BST
   workflow_dispatch:
 
 jobs:
@@ -18,9 +16,10 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout repo
+      - name: Checkout data branch
         uses: actions/checkout@v4
         with:
+          ref: data
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Refresh prices in data.json
@@ -28,10 +27,10 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
-      - name: Commit updated prices
+      - name: Commit updated prices to data branch
         run: |
           git config user.name  "Lobito Price Bot"
           git config user.email "actions@github.com"
           git add data.json
           git diff --staged --quiet || git commit -m "Price refresh: $(date -u '+%H:%M UTC')"
-          git push
+          git push origin data
