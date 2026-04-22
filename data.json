@@ -10,14 +10,14 @@
       "value": 56290,
       "source": "Trading Economics (LME CFD)",
       "date": "20 Apr 2026",
-      "refreshed_at": "2026-04-22T15:46:08.868770+00:00"
+      "refreshed_at": "2026-04-22T15:56:02.012947+00:00"
     },
     "copper": {
-      "raw": "~$13,420/t · LME.com (intraday, delayed) · 21 Apr 2026 *(converted from ~$6.09/lb COMEX; LME official cash settlement for 22 Apr 2026 not yet published at time of query)*",
-      "value": 13420,
-      "source": "LME.com (intraday, delayed)",
-      "date": "21 Apr 2026 *(converted from ~$6.09/lb COMEX; LME official cash settlement for 22 Apr 2026 not yet published at time of query)*",
-      "refreshed_at": "2026-04-22T15:46:08.868770+00:00"
+      "raw": "$13,444/t · LME (intraday, ~$6.10/lb × 2,204.62; Trading Economics/LME.com) · 22 Apr 2026 (est.) — *Note: LME.com publishes official cash price data with a delay; the most recent confirmed LME cash official price available is from 21 Apr 2026. Trading Economics reports copper futures at ~$6.10/lb on 22 Apr 2026, equating to ~$13,448/t. A precise LME cash official $/t figure for 22 Apr 2026 is not yet publicly confirmed in free sources.*",
+      "value": 13444,
+      "source": "LME (intraday, ~$6.10/lb × 2,204.62; Trading Economics/LME.com)",
+      "date": "22 Apr 2026 (est.) — *Note: LME.com publishes official cash price data with a delay; the most recent confirmed LME cash official price available is from 21 Apr 2026. Trading Economics reports copper futures at ~$6.10/lb on 22 Apr 2026, equating to ~$13,448/t. A precise LME cash official $/t figure for 22 Apr 2026 is not yet publicly confirmed in free sources.*",
+      "refreshed_at": "2026-04-22T15:56:02.012947+00:00"
     }
   },
   "brief": {
@@ -54,5 +54,5 @@
       "note": "REsourceEU launched 13 Apr. Section 232 copper tariffs live 6 Apr."
     }
   },
-  "last_price_refresh": "2026-04-22T15:46:08.868770+00:00"
+  "last_price_refresh": "2026-04-22T15:56:02.012947+00:00"
 }
