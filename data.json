@@ -6,16 +6,18 @@
   "quality_flags": [],
   "prices": {
     "cobalt": {
-      "raw": "$56,290/t - Trading Economics - Sat 18 Apr 2026",
+      "raw": "$56,290/t · Trading Economics (LME CFD) · 20 Apr 2026",
       "value": 56290,
-      "source": "Trading Economics",
-      "date": "Sat 18 Apr 2026"
+      "source": "Trading Economics (LME CFD)",
+      "date": "20 Apr 2026",
+      "refreshed_at": "2026-04-22T15:46:08.868770+00:00"
     },
     "copper": {
-      "raw": "$13,370/t - Trading Economics - Sat 18 Apr 2026",
-      "value": 13370,
-      "source": "Trading Economics",
-      "date": "Sat 18 Apr 2026"
+      "raw": "~$13,420/t · LME.com (intraday, delayed) · 21 Apr 2026 *(converted from ~$6.09/lb COMEX; LME official cash settlement for 22 Apr 2026 not yet published at time of query)*",
+      "value": 13420,
+      "source": "LME.com (intraday, delayed)",
+      "date": "21 Apr 2026 *(converted from ~$6.09/lb COMEX; LME official cash settlement for 22 Apr 2026 not yet published at time of query)*",
+      "refreshed_at": "2026-04-22T15:46:08.868770+00:00"
     }
   },
   "brief": {
@@ -52,5 +54,5 @@
       "note": "REsourceEU launched 13 Apr. Section 232 copper tariffs live 6 Apr."
     }
   },
-  "last_price_refresh": "2026-04-18T01:36:19Z"
+  "last_price_refresh": "2026-04-22T15:46:08.868770+00:00"
 }
