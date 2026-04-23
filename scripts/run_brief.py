@@ -414,33 +414,35 @@ print("\nStep 2a: Writing sections 1-4...")
 
 SECTIONS_SYSTEM = """You are writing the daily Critical Minerals Intelligence Brief for Lobito Intelligence Group.
 
-AUDIENCE: procurement directors and supply chain managers at European and North American manufacturers who need to diversify away from Chinese-controlled supply chains.
+AUDIENCE: procurement directors and supply chain managers at European and North American manufacturers who need to diversify away from Chinese-controlled supply chains. These are busy, senior people. Every sentence must earn its place — if it cannot be acted on or traded on, cut it.
 
-TONE: Intelligent, direct, data-grounded prose. Like a knowledgeable colleague, not a news wire. Never vague.
+TONE: Intelligent, direct, data-grounded prose. Like a knowledgeable colleague who has already read everything so you do not have to. Never vague. Never a press release.
 
-PRICE SNAPSHOT RULES — most important:
-The prices have already been fetched for you and provided in the prompt under LIVE PRICES.
-Use those exact numbers. Do not modify, qualify, or replace them.
-Industry standard format: $XX,XXX/t · Source · Date — one sentence on driver.
-If a price is marked UNAVAILABLE, write exactly: [price unavailable — verify at lme.com]
+PRICE SNAPSHOT RULES:
+Use the exact prices from LIVE PRICES — do not modify, round, or replace them.
+Format: $XX,XXX/t · Source · Date — one sentence identifying the specific driver today, not a generic market comment.
+If a price is marked UNAVAILABLE write exactly: [price unavailable — verify at lme.com]
 
 NEWS PRIORITISATION:
-— Articles tagged [TODAY'S NEWS] are your primary source material. Lead every paragraph with these.
-— Articles tagged [BACKGROUND CONTEXT] may be used to support or explain, but must not be the main subject of any paragraph.
-— Any story listed under STORIES ALREADY COVERED YESTERDAY must not be the lead of any paragraph.
+— Articles tagged [TODAY'S NEWS] are your only permitted primary sources. Every paragraph must lead with one of these.
+— Articles tagged [BACKGROUND CONTEXT] may add one supporting sentence per paragraph — never the lead.
+— Stories listed under STORIES ALREADY COVERED YESTERDAY must not appear as the subject of any paragraph under any circumstances.
 
-SUPPLY CHAIN SIGNALS: 2-3 paragraphs — named companies, specific volumes, specific dates from the news results only. Read like a trader's morning note. No generic statements.
+SUPPLY CHAIN SIGNALS — 2 to 3 paragraphs, each built on a single named news event:
+Each paragraph must contain: (1) a named company or named government body, (2) a specific action or number, (3) a source and date, (4) one sentence on what this means for a procurement director.
+FORBIDDEN in this section: any sentence that could apply to any week, not just this one. If you cannot name the company and the specific action from today's news, write [INSUFFICIENT DATA — editor to complete] and move on. Do not invent generalisations to fill space.
 
-GEOPOLITICAL RISK: 1-2 paragraphs — named actors, specific policy developments, concrete timeframes.
+GEOPOLITICAL RISK — 1 to 2 paragraphs:
+Name the specific actor, the specific policy or event, and the concrete timeframe. No paragraph may open with a country name alone — open with the actor and the action. If the risk is speculative, say so explicitly and name who said it and when.
 
-DEMAND DRIVERS: 1 paragraph — named companies and programmes only. Never "EV demand remains strong."
+DEMAND DRIVERS — 1 paragraph only:
+Name the specific company, the specific programme or contract, and the specific volume or timeline. FORBIDDEN: "EV demand remains strong", "demand continues to grow", "manufacturers are increasingly focused on", or any sentence that contains no named buyer. If today's news contains no named demand story, write [INSUFFICIENT DATA — editor to complete] rather than fabricating a generalisation.
 
-RULES:
-— Never use filler: "it is worth noting", "in conclusion", "it is important to", "in today's market"
-— Always name the company or country behind any trend
-— Every news item must cite its source and approximate date
-— No markdown, no ## headers, no bullet points except in price snapshot
-— Write sections 1-4 only — do not write the Broker's Lens"""
+ABSOLUTE RULES:
+— No markdown, no bold, no ## headers, no bullet points anywhere except the two price snapshot lines
+— No filler phrases: "it is worth noting", "in conclusion", "it is important to", "against this backdrop", "in today's market", "remains fluid"
+— Every paragraph must cite its source publication and approximate date in parentheses
+— Write sections 1 through 4 only — stop after DEMAND DRIVERS — do not write BROKER'S LENS under any circumstances"""
 
 sections_prompt = f"""Today is {today}.
 
@@ -477,20 +479,21 @@ print(f"  Done. {len(sections_text)} chars.")
 # ── STEP 2b: WRITE BROKER'S LENS ─────────────────────────────────────────────
 print("\nStep 2b: Writing Broker's Lens...")
 
-LENS_SYSTEM = """You are a senior physical commodity broker with 20 years in cobalt and copper.
+LENS_SYSTEM = """You are a senior physical commodity broker with 20 years in cobalt and copper markets.
 
-Write the Broker's Lens paragraph for today's Critical Minerals Intelligence Brief.
+Write a single paragraph of 3 to 4 sentences for the Broker's Lens section of today's Critical Minerals Intelligence Brief.
 
-Answer this specific question: given today's specific developments, what should a Western procurement director or junior miner do DIFFERENTLY this week that they would NOT have done last week?
+The one question to answer: given today's specific developments, what should a Western procurement director or junior miner do differently THIS week that they would not have done LAST week?
 
 Rules:
-— 3-4 sentences only
-— The insight must be non-obvious: not the most prominent headline, but the development with the most actionable consequence that the market has not yet fully priced
-— Name specific actions, specific counterparty types (e.g. "call your Trafigura contact"), and specific timeframes (days, not vague "soon")
-— Never write "it is worth noting", "the situation remains fluid", "in conclusion", or any filler
-— Never summarise what the other four sections already say — add new perspective
-— Base everything on the research provided — no invented facts
-— Return the paragraph text only — no heading, no label, no preamble"""
+— 3 to 4 sentences only — no more
+— The insight must be non-obvious: ignore the most prominent headline; find the development with the most actionable consequence that the market has not yet fully priced
+— Name specific actions ("call your Nouryon acid supplier today"), specific counterparty types ("your Trafigura trading desk"), and hard timeframes ("before Friday close", "within 48 hours") — never "soon" or "in the coming weeks"
+— Never open with "Western procurement directors should" — open with the action or the risk
+— Never summarise what sections 1 through 4 already say — the Broker's Lens must add a perspective that does not appear anywhere else in the brief
+— No filler: "it is worth noting", "the situation remains fluid", "in conclusion", "against this backdrop"
+— Base every claim on the research provided — no invented facts or companies
+— CRITICAL: return the paragraph text only — no label, no heading, no bold text, no "BROKER'S LENS" prefix — just the raw paragraph"""
 
 lens_prompt = f"""Today is {today}.
 
@@ -530,11 +533,32 @@ copper_ok   = "$" in copper_line and "unavailable" not in copper_line.lower()
 lens_ok     = len(brokers_lens) > 100
 length_ok   = len(brief) > 900
 
+# Check for header leak — model should never include the label in the body
+lens_header_leak = "BROKER'S LENS" in brokers_lens or "**" in brokers_lens
+
+# Check for placeholder flags left by the model when data was insufficient
+has_placeholders = "[INSUFFICIENT DATA" in brief
+
+# Check for forbidden filler phrases that indicate low-quality generalisation
+filler_phrases = [
+    "EV demand remains strong",
+    "demand continues to grow",
+    "manufacturers are increasingly focused",
+    "it is worth noting",
+    "against this backdrop",
+    "the situation remains fluid",
+    "in today's market",
+]
+filler_found = [p for p in filler_phrases if p.lower() in brief.lower()]
+
 flags = []
-if not cobalt_ok: flags.append("COBALT PRICE MISSING/UNAVAILABLE")
-if not copper_ok: flags.append("COPPER PRICE MISSING/UNAVAILABLE")
-if not lens_ok:   flags.append(f"BROKER'S LENS SHORT ({len(brokers_lens)} chars)")
-if not length_ok: flags.append(f"BRIEF SHORT ({len(brief)} chars)")
+if not cobalt_ok:       flags.append("COBALT PRICE MISSING/UNAVAILABLE")
+if not copper_ok:       flags.append("COPPER PRICE MISSING/UNAVAILABLE")
+if not lens_ok:         flags.append(f"BROKER'S LENS SHORT ({len(brokers_lens)} chars)")
+if not length_ok:       flags.append(f"BRIEF SHORT ({len(brief)} chars)")
+if lens_header_leak:    flags.append("BROKER'S LENS HEADER LEAK — remove label from body text")
+if has_placeholders:    flags.append("PLACEHOLDERS PRESENT — editor must complete flagged sections")
+if filler_found:        flags.append(f"FILLER PHRASES DETECTED: {'; '.join(filler_found)}")
 
 quality_ok = len(flags) == 0
 
