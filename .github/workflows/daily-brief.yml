@@ -13,12 +13,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    permissions:
-      contents: write  # needed to commit used_stories.json back to repo
+    # No contents: write permission needed.
+    # used_stories.json is persisted via actions/cache — no git commits,
+    # no branch protection conflicts.
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
+
+      - name: Restore used stories from cache
+        # Cache key is fixed so every run restores the file written yesterday.
+        # GitHub Actions cache storage is outside the repo — no branch
+        # protection rules apply to it.
+        uses: actions/cache@v4
+        with:
+          path: used_stories.json
+          key: used-stories-latest
+          restore-keys: used-stories-latest
+
+      - name: Copy restored cache into scripts directory
+        run: |
+          if [ -f used_stories.json ]; then
+            cp used_stories.json scripts/used_stories.json
+            echo "Restored used_stories.json from cache."
+          else
+            echo "No cached used_stories.json — first run or cache expired, skipping deduplication."
+          fi
 
       - name: Run brief agent
         run: python3 scripts/run_brief.py
@@ -28,17 +48,15 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
 
-      - name: Save used stories for tomorrow's deduplication
+      - name: Stage used stories for cache save
+        # Copy the file written by run_brief.py to repo root so actions/cache
+        # saves it for tomorrow. if: always() ensures this runs even on failure
+        # so a bad run never corrupts the deduplication state.
+        if: always()
         run: |
           if [ -f scripts/used_stories.json ]; then
             cp scripts/used_stories.json used_stories.json
-          fi
-          if [ -f used_stories.json ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add used_stories.json
-            git diff --staged --quiet || git commit -m "chore: update used stories [skip ci]"
-            git push
+            echo "used_stories.json staged for cache save."
           else
-            echo "No used_stories.json found — skipping commit."
+            echo "No used_stories.json written — cache will not be updated."
           fi
