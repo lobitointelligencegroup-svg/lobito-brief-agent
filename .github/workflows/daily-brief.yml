@@ -2,39 +2,43 @@ name: Daily Critical Minerals Brief
 
 on:
   schedule:
-    - cron: '0 5 * * 1-5'   # 6am BST (5am UTC)
+    # 04:00 UTC = 05:00 London (BST) / 04:00 London (GMT)
+    # Running at 04:00 UTC avoids GitHub Actions peak-load queue (05:00–08:00 UTC)
+    # which causes scheduled jobs to drift by up to 3–6 hours on busy mornings.
+    - cron: '0 4 * * 1-5'
   workflow_dispatch:
 
 jobs:
   generate-brief:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+
     permissions:
-      contents: write
+      contents: write  # needed to commit used_stories.json back to repo
 
     steps:
-      - name: Checkout repo (main)
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout repo
+        uses: actions/checkout@v5
 
       - name: Run brief agent
         run: python3 scripts/run_brief.py
         env:
-          ANTHROPIC_API_KEY:  ${{ secrets.ANTHROPIC_API_KEY }}
-          BRAVE_API_KEY:      ${{ secrets.BRAVE_API_KEY }}
-          GMAIL_USER:         ${{ secrets.GMAIL_USER }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
 
-      - name: Push data.json to data branch
+      - name: Save used stories for tomorrow's deduplication
         run: |
-          git config user.name  "Lobito Brief Bot"
-          git config user.email "actions@github.com"
-          # Switch to (or create) the data branch
-          git fetch origin data:data 2>/dev/null || git checkout --orphan data
-          git checkout data 2>/dev/null || true
-          # Copy the freshly written data.json onto the data branch
-          git checkout main -- data.json 2>/dev/null || true
-          git add data.json
-          git diff --staged --quiet || git commit -m "Brief data: $(date -u '+%a %d %b %Y')"
-          git push origin data
+          if [ -f scripts/used_stories.json ]; then
+            cp scripts/used_stories.json used_stories.json
+          fi
+          if [ -f used_stories.json ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add used_stories.json
+            git diff --staged --quiet || git commit -m "chore: update used stories [skip ci]"
+            git push
+          else
+            echo "No used_stories.json found — skipping commit."
+          fi
