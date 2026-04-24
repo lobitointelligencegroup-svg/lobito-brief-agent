@@ -199,30 +199,40 @@ def claude_haiku(system, user_message, max_tokens=1500):
 # ── STEP 1a: LIVE PRICES via Claude web_search ───────────────────────────────
 print("Step 1a: Fetching live prices via Claude web_search...")
 
-PRICE_SYSTEM = """You are a commodity price data retrieval agent. Your only job is to find the current market price for cobalt and copper and return them in a precise structured format. Nothing else."""
+PRICE_SYSTEM = """You are a commodity price data retrieval agent. Your only job is to find today's market price for cobalt and copper and return them in a precise structured format. Nothing else."""
 
 PRICE_PROMPT = f"""Today is {today}.
 
-Search for the current price of cobalt and the current LME copper price.
+You must find prices dated as close to {today} as possible. If the market is closed today, use the most recent available price and record its actual date accurately — do not guess or omit the date.
 
-For cobalt: search "cobalt price per tonne USD today" and find the most recent number from Fastmarkets, Metal Bulletin, LME, Trading Economics, or Benchmark Mineral Intelligence. The industry standard is USD/tonne.
+COBALT — search in this order until you find a price:
+1. Search: cobalt price per tonne {today}
+2. Search: cobalt hydroxide price USD tonne {now.strftime("%B %Y")}
+3. Search: cobalt LME price today
 
-For copper: search "LME copper cash price per tonne today" and find today's LME official cash settlement or spot price in USD/tonne from LME.com, Trading Economics, or Fastmarkets.
+Use the most recent number from: Fastmarkets, LME, Trading Economics, Benchmark Mineral Intelligence, or Metal Bulletin. Record the exact date shown on the page — do not write today's date if the page shows a different date.
 
-Return ONLY this exact format, nothing else:
+COPPER — search in this order until you find a price:
+1. Search: LME copper cash price {today}
+2. Search: LME copper price per tonne {now.strftime("%B %Y")}
+3. Search: copper price USD tonne today
 
-COBALT: $[price]/t · [source] · [date]
-COPPER: $[price]/t · [source] · [date]
+Use the official LME cash settlement or spot price in USD/tonne from LME.com, Trading Economics, or Fastmarkets. Record the exact date shown — do not substitute today's date.
+
+Return ONLY these two lines, nothing else:
+
+COBALT: $[price]/t · [source] · [exact date from source]
+COPPER: $[price]/t · [source] · [exact date from source]
 
 Example:
-COBALT: $56,290/t · LME · 17 Apr 2026
-COPPER: $9,820/t · LME cash · 17 Apr 2026
+COBALT: $56,290/t · Trading Economics · 22 Apr 2026
+COPPER: $13,197/t · LME cash · 23 Apr 2026
 
-If you cannot find a number after searching, write:
+If you cannot find a number after all three searches, write:
 COBALT: UNAVAILABLE
 COPPER: UNAVAILABLE
 
-Do not write anything other than these two lines."""
+Do not write anything other than these two lines. Do not add explanation."""
 
 WEB_SEARCH_TOOL = [{
     "type": "web_search_20250305",
@@ -242,6 +252,36 @@ print(f"  Prices retrieved: {price_text}")
 
 # ── STEP 1b: NEWS CONTEXT via Brave Search ────────────────────────────────────
 print(f"\nStep 1b: Fetching news context via Brave Search (day focus: {day_of_week})...")
+
+
+def parse_age_to_date(age_str):
+    """
+    Convert Brave Search relative age strings to absolute dates.
+    Brave returns values like: "33 minutes ago", "7 hours ago", "1 day ago",
+    "2 days ago", "3 weeks ago". We convert these to "DD Mon YYYY" format.
+    Falls back to the raw string if parsing fails.
+    """
+    if not age_str:
+        return ""
+    import re
+    age_lower = age_str.lower().strip()
+    # Already looks like a real date — return as-is
+    if re.search(r'\d{4}', age_lower):
+        return age_str
+    match = re.match(r'(\d+)\s+(minute|hour|day|week|month)s?\s+ago', age_lower)
+    if match:
+        n, unit = int(match.group(1)), match.group(2)
+        from datetime import timedelta
+        delta_map = {
+            "minute": timedelta(minutes=n),
+            "hour":   timedelta(hours=n),
+            "day":    timedelta(days=n),
+            "week":   timedelta(weeks=n),
+            "month":  timedelta(days=n * 30),
+        }
+        article_date = now - delta_map.get(unit, timedelta(0))
+        return article_date.strftime("%-d %b %Y")
+    return age_str  # fallback: return whatever Brave gave us
 
 
 def brave_search(query, count=5, freshness="pd", search_type="news"):
@@ -281,7 +321,7 @@ def brave_search(query, count=5, freshness="pd", search_type="news"):
                 {
                     "title":       r.get("title", ""),
                     "description": r.get("description", ""),
-                    "age":         r.get("age", ""),
+                    "age":         parse_age_to_date(r.get("age", "")),
                     "source":      r.get("meta_url", {}).get("hostname", ""),
                     "freshness":   freshness,
                 }
@@ -530,6 +570,30 @@ cobalt_line = snip(brief, "Cobalt:")
 copper_line = snip(brief, "Copper:")
 cobalt_ok   = "$" in cobalt_line and "unavailable" not in cobalt_line.lower()
 copper_ok   = "$" in copper_line and "unavailable" not in copper_line.lower()
+
+# Staleness check — warn if prices are dated more than 2 days before today.
+# Cobalt and copper markets are closed weekends so we allow a 2-day gap.
+def price_is_stale(price_line, reference_date, max_days=2):
+    """Return True if the date found in price_line is more than max_days old."""
+    import re
+    from datetime import timedelta
+    months = {
+        "jan":1,"feb":2,"mar":3,"apr":4,"may":5,"jun":6,
+        "jul":7,"aug":8,"sep":9,"oct":10,"nov":11,"dec":12
+    }
+    match = re.search(r'(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})', price_line)
+    if not match:
+        return False  # can't parse — don't flag
+    day, mon, yr = int(match.group(1)), match.group(2).lower(), int(match.group(3))
+    if mon not in months:
+        return False
+    from datetime import date
+    price_date = date(yr, months[mon], day)
+    gap = (reference_date.date() - price_date).days
+    return gap > max_days
+
+cobalt_stale = price_is_stale(cobalt_line, now)
+copper_stale = price_is_stale(copper_line, now)
 lens_ok     = len(brokers_lens) > 100
 length_ok   = len(brief) > 900
 
@@ -554,6 +618,8 @@ filler_found = [p for p in filler_phrases if p.lower() in brief.lower()]
 flags = []
 if not cobalt_ok:       flags.append("COBALT PRICE MISSING/UNAVAILABLE")
 if not copper_ok:       flags.append("COPPER PRICE MISSING/UNAVAILABLE")
+if cobalt_stale:        flags.append("COBALT PRICE MAY BE STALE — verify date before publishing")
+if copper_stale:        flags.append("COPPER PRICE MAY BE STALE — verify date before publishing")
 if not lens_ok:         flags.append(f"BROKER'S LENS SHORT ({len(brokers_lens)} chars)")
 if not length_ok:       flags.append(f"BRIEF SHORT ({len(brief)} chars)")
 if lens_header_leak:    flags.append("BROKER'S LENS HEADER LEAK — remove label from body text")
