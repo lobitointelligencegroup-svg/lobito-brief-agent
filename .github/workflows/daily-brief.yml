@@ -1,30 +1,33 @@
 name: Daily Critical Minerals Brief
 
 on:
-  schedule:
-    # 04:00 UTC = 05:00 London (BST) / 04:00 London (GMT)
-    # Running at 04:00 UTC avoids GitHub Actions peak-load queue (05:00–08:00 UTC)
-    # which causes scheduled jobs to drift by up to 3–6 hours on busy mornings.
-    - cron: '0 4 * * 1-5'
+  # workflow_dispatch is the PRIMARY trigger — fired by an external cron service
+  # (cron-job.org or EasyCron) at exactly 05:00 London time via GitHub API.
+  # This bypasses GitHub's scheduler queue which can delay jobs by 3-6 hours.
+  #
+  # External cron setup:
+  #   URL:    https://api.github.com/repos/lobitointelligencegroup-svg/lobito-brief-agent/actions/workflows/daily-brief.yml/dispatches
+  #   Method: POST
+  #   Header: Authorization: Bearer <GITHUB_PAT>
+  #   Header: Accept: application/vnd.github+json
+  #   Body:   {"ref":"main"}
+  #   Schedule: 04:00 UTC Mon-Fri (= 05:00 London BST / 04:00 London GMT)
   workflow_dispatch:
+
+  # schedule trigger removed — cron-job.org via workflow_dispatch is the sole trigger.
+  # Keeping the GitHub scheduler as fallback caused a duplicate brief at ~11am.
+  # If cron-job.org ever misses a day, trigger manually via workflow_dispatch in GitHub UI.
 
 jobs:
   generate-brief:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    # No contents: write permission needed.
-    # used_stories.json is persisted via actions/cache — no git commits,
-    # no branch protection conflicts.
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
 
       - name: Restore used stories from cache
-        # Cache key is fixed so every run restores the file written yesterday.
-        # GitHub Actions cache storage is outside the repo — no branch
-        # protection rules apply to it.
         uses: actions/cache@v4
         with:
           path: used_stories.json
@@ -37,7 +40,7 @@ jobs:
             cp used_stories.json scripts/used_stories.json
             echo "Restored used_stories.json from cache."
           else
-            echo "No cached used_stories.json — first run or cache expired, skipping deduplication."
+            echo "No cached used_stories.json — first run or cache expired."
           fi
 
       - name: Run brief agent
@@ -49,9 +52,6 @@ jobs:
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
 
       - name: Stage used stories for cache save
-        # Copy the file written by run_brief.py to repo root so actions/cache
-        # saves it for tomorrow. if: always() ensures this runs even on failure
-        # so a bad run never corrupts the deduplication state.
         if: always()
         run: |
           if [ -f scripts/used_stories.json ]; then
